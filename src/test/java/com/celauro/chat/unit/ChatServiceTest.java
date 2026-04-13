@@ -100,6 +100,36 @@ public class ChatServiceTest {
         });
     }
 
+    @Test
+    void shouldVerifyTheCorrectCreationOfPageable(){
+        int limit = 1;
+
+        User user = new User();
+        user.setUsername("test");
+
+        Message message = new Message();
+        message.setUser(user);
+        message.setText("test di limite");
+
+        when(repository.findLimitMessagesByOrderByTimestampDesc(any())).thenReturn(List.of(message));
+
+        List<MessageResponseDTO> responses = chatService.getRecentMessages(limit);
+
+        ArgumentCaptor<PageRequest> captor = ArgumentCaptor.forClass(PageRequest.class);
+
+        verify(repository).findLimitMessagesByOrderByTimestampDesc(captor.capture());
+
+        PageRequest page = captor.getValue();
+        
+        assertEquals(1, page.getPageSize());
+        assertEquals(0, page.getPageNumber());
+
+        assertNotNull(responses);
+        assertEquals(limit, responses.size());
+        assertEquals("test", responses.getFirst().getUsername());
+        assertEquals("test di limite", responses.getFirst().getText());
+    }
+
     // @Test
     // void shouldThrowExceptionIfMessageNotFound(){
     //     when(repository.findById(1L)).thenReturn(Optional.empty());
