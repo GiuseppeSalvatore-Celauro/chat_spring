@@ -130,6 +130,56 @@ public class ChatServiceTest {
         assertEquals("test di limite", responses.getFirst().getText());
     }
 
+    @Test
+    void shouldThrowIllegalArgumentException_whenLimitIsZeroOrLesser(){
+        assertThrows(IllegalArgumentException.class, () -> {
+            chatService.getRecentMessages(0);
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            chatService.getRecentMessages(-1);
+        });
+    }
+
+    @Test
+    void shouldReturnEmptyListOfMessages(){
+        when(repository.findLimitMessagesByOrderByTimestampDesc(any())).thenReturn(List.of());
+        List<MessageResponseDTO> messages = chatService.getRecentMessages(1);
+        assertTrue(messages.isEmpty());
+    }
+    
+    @Test
+    void shouldReturnLargeNumberOfMessages(){
+        List<Message> messages = new ArrayList<>();
+        User user = new User();
+        user.setUsername("test");
+        for(int i=0; i < 100; i++){
+            Message message = new Message(user, "messagio numero: " + i);
+            messages.add(message);
+        }
+
+        when(repository.findLimitMessagesByOrderByTimestampDesc(any())).thenReturn(messages);
+
+        List<MessageResponseDTO> response = chatService.getRecentMessages(100);
+        assertEquals(100, response.size());
+    }
+
+    @Test
+    void shouldReturnAllMessages_whenLimitIsGreaterThenList(){
+        User user = new User();
+        user.setUsername("test");
+
+        Message message = new Message();
+        message.setUser(user);
+        message.setText("Messaggio");
+
+        when(repository.findLimitMessagesByOrderByTimestampDesc(any())).thenReturn(List.of(message));
+
+        List<MessageResponseDTO> response = chatService.getRecentMessages(100);
+        assertEquals(1, response.size());
+    }
+    
+
     // @Test
     // void shouldThrowExceptionIfMessageNotFound(){
     //     when(repository.findById(1L)).thenReturn(Optional.empty());
@@ -198,19 +248,4 @@ public class ChatServiceTest {
     //     });
     // }
 
-    // @Test
-    // void shouldReturn100Messages(){
-    //     List<Message> messages = new ArrayList<>();
-    //     User user = new User();
-    //     user.setUsername("test");
-    //     for(int i=0; i < 100; i++){
-    //         Message message = new Message(user, "messagio numero: " + i);
-    //         messages.add(message);
-    //     }
-
-    //     when(repository.findLimitMessagesByOrderByTimestampDesc(any())).thenReturn(messages);
-
-    //     List<MessageResponseDTO> response = chatService.getRecentMessages(100);
-    //     assertEquals(100, response.size());
-    // }
 }
