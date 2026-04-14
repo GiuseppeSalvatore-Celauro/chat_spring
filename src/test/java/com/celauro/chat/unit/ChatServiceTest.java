@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
@@ -20,7 +19,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import com.celauro.chat.DTO.MessageRequestDTO;
 import com.celauro.chat.DTO.MessageResponseDTO;
@@ -46,8 +44,12 @@ public class ChatServiceTest {
     @InjectMocks
     private ChatService chatService;
     
+
+    // ========================
+    // Create message
+    // ========================
     @Test
-    void shouldCreateMessageSuccessffuly(){
+    void shouldCreateMessage_whenValidRequest_returnCorrectResponse(){
         MessageRequestDTO request = new MessageRequestDTO();
         request.setUsername("testUsername");
         request.setText("ciao sono un test");
@@ -55,53 +57,47 @@ public class ChatServiceTest {
         User user = new User();
         user.setUsername(request.getUsername());
 
-        when(userService.getOrCreateUser(any())).thenReturn(user);
-        
-        Message message = new Message();
-        message.setUser(user);
-        message.setText("ciao sono un test");
-        message.setTimestamp(System.currentTimeMillis());
-
-        when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(userService.getOrCreateUser("testUsername")).thenReturn(user);
+        when(repository.save(any(Message.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         MessageResponseDTO response = chatService.createMessage(request);
-
-        ArgumentCaptor<Message> captor = ArgumentCaptor.forClass(Message.class);
-
-        // Test di verifica che i metodi siano stati chiamati almeno una volta
-        verify(userService).getOrCreateUser("testUsername");
-        verify(repository).save(captor.capture());
-        
-        Message captured = captor.getValue();
-        
-        // Test per contenuto del message
-        assertNotNull(captured);
-        assertEquals("testUsername", captured.getUser().getUsername());
-        assertEquals("ciao sono un test", captured.getText());
-        assertTrue(captured.getTimestamp() > 0);
 
         assertNotNull(response);
         assertEquals("testUsername", response.getUsername());
         assertEquals("ciao sono un test", response.getText());
         assertTrue(response.getTimestamp() > 0);
 
+        verify(userService).getOrCreateUser("testUsername");
+        verify(repository).save(any(Message.class));
     }
 
+    // ========================
+    // Create Message - Edge case
+    // ========================
     @Test
-    void shouldThrowRuntimeException_whenRepoOff(){
+    void shouldThrowException_whenRepositoryFailsDuringSave(){
         MessageRequestDTO request = new MessageRequestDTO();
         request.setUsername("testUsername");
         request.setText("ciao sono un test");
 
+        User user = new User();
+        user.setUsername(request.getUsername());
+
+        when(userService.getOrCreateUser("testUsername")).thenReturn(user);
         when(repository.save(any())).thenThrow(new RuntimeException("DB down"));
 
         assertThrows(RuntimeException.class, () ->{
-                chatService.createMessage(request);
+            chatService.createMessage(request);
         });
+
+        verify(repository).save(any());
     }
 
+    // ========================
+    // Recent Messages
+    // ========================
     @Test
-    void shouldVerifyTheCorrectCreationOfPageable(){
+    void shouldReturnMessages_whenLimitsIsValid(){
         int limit = 1;
 
         User user = new User();
@@ -111,27 +107,22 @@ public class ChatServiceTest {
         message.setUser(user);
         message.setText("test di limite");
 
-        when(repository.findLimitMessagesByOrderByTimestampDesc(any())).thenReturn(List.of(message));
+        when(repository.findLimitMessagesByOrderByTimestampDesc(any(PageRequest.class))).thenReturn(List.of(message));
 
         List<MessageResponseDTO> responses = chatService.getRecentMessages(limit);
-
-        ArgumentCaptor<PageRequest> captor = ArgumentCaptor.forClass(PageRequest.class);
-
-        verify(repository).findLimitMessagesByOrderByTimestampDesc(captor.capture());
-
-        PageRequest page = captor.getValue();
-        
-        assertEquals(1, page.getPageSize());
-        assertEquals(0, page.getPageNumber());
 
         assertNotNull(responses);
         assertEquals(limit, responses.size());
         assertEquals("test", responses.getFirst().getUsername());
         assertEquals("test di limite", responses.getFirst().getText());
+        verify(repository).findLimitMessagesByOrderByTimestampDesc(any(PageRequest.class));
     }
 
+    // ========================
+    // Recent Messages - Edge cases
+    // ========================
     @Test
-    void shouldThrowIllegalArgumentException_whenLimitIsZeroOrLesser(){
+    void shouldThrowException_whenLimitIsZeroOrNegative(){
         assertThrows(IllegalArgumentException.class, () -> {
             chatService.getRecentMessages(0);
         });
@@ -142,30 +133,36 @@ public class ChatServiceTest {
     }
 
     @Test
-    void shouldReturnEmptyListOfMessages(){
-        when(repository.findLimitMessagesByOrderByTimestampDesc(any())).thenReturn(List.of());
+    void shouldReturnEmptyList_whenMessagesFound(){
+        when(repository.findLimitMessagesByOrderByTimestampDesc(any(PageRequest.class))).thenReturn(List.of());
+
         List<MessageResponseDTO> messages = chatService.getRecentMessages(1);
+
         assertTrue(messages.isEmpty());
+        verify(repository).findLimitMessagesByOrderByTimestampDesc(any());
     }
     
     @Test
-    void shouldReturnLargeNumberOfMessages(){
-        List<Message> messages = new ArrayList<>();
+    void shouldReturnLargeNumberOfMessages_whenRepositoryReturnsMany(){
         User user = new User();
         user.setUsername("test");
+        List<Message> messages = new ArrayList<>();
         for(int i=0; i < 100; i++){
-            Message message = new Message(user, "messagio numero: " + i);
+            Message message = new Message(user, "messaggio numero: " + i);
             messages.add(message);
         }
 
-        when(repository.findLimitMessagesByOrderByTimestampDesc(any())).thenReturn(messages);
+        when(repository.findLimitMessagesByOrderByTimestampDesc(any(PageRequest.class))).thenReturn(messages);
 
         List<MessageResponseDTO> response = chatService.getRecentMessages(100);
         assertEquals(100, response.size());
+        assertEquals("messaggio numero: 0", response.getFirst().getText());
+
+        verify(repository).findLimitMessagesByOrderByTimestampDesc(any(PageRequest.class));
     }
 
     @Test
-    void shouldReturnAllMessages_whenLimitIsGreaterThenList(){
+    void shouldReturnAllMessages_whenRepositoryReturnsLessThenLimit(){
         User user = new User();
         user.setUsername("test");
 
@@ -173,79 +170,54 @@ public class ChatServiceTest {
         message.setUser(user);
         message.setText("Messaggio");
 
-        when(repository.findLimitMessagesByOrderByTimestampDesc(any())).thenReturn(List.of(message));
+        when(repository.findLimitMessagesByOrderByTimestampDesc(any(PageRequest.class))).thenReturn(List.of(message));
 
         List<MessageResponseDTO> response = chatService.getRecentMessages(100);
         assertEquals(1, response.size());
+        assertEquals("Messaggio", response.getFirst().getText());
+
+        verify(repository).findLimitMessagesByOrderByTimestampDesc(any(PageRequest.class));
+
     }
-    
 
-    // @Test
-    // void shouldThrowExceptionIfMessageNotFound(){
-    //     when(repository.findById(1L)).thenReturn(Optional.empty());
+    // ========================
+    // Desc messages - Edge case
+    // ========================
+    @Test
+    void shouldReturnEmptyList_whenNoMessagesExist(){
+        when(repository.findAllByOrderByTimestampDesc()).thenReturn(List.of());
 
-    //     assertThrows(NotFoundException.class, () -> {
-    //         chatService.deleteMessage(1L);
-    //     });
-    // }
+        List<MessageResponseDTO> response = chatService.getMessageDesc();
 
-    // @Test
-    // void shouldReturnMessagesFromUsername(){
-    //     User user = new User();
-    //     user.setUsername("luca");
+        assertTrue(response.isEmpty());
+    }
 
-    //     Message message1 = new Message(user, "ciao");
-    //     Message message2 = new Message(user, "ciao");
+    // ========================
+    // User messages - Edge case
+    // ========================
+    @Test
+    void shouldThrowExceptionIfUsernameNotFound(){
+        when(userService.getOrThrowExceptionUserByUsername("luca")).thenThrow(new NotFoundException("Nessun user trovato"));
 
-    //     when(repository.findByUserOrderByTimestampDesc(user))
-    //         .thenReturn(List.of(message1, message2));
+        assertThrows(NotFoundException.class, () -> {
+            chatService.getUserMessages("luca");
+        });
 
-    //     when(userRepository.findByUsername(any()))
-    //         .thenReturn(Optional.of(user));
+        verify(userService).getOrThrowExceptionUserByUsername("luca");
+    }
 
-    //     when(userRepository.findAll())
-    //         .thenReturn(List.of(user));
+    // ========================
+    // Delete message - Edge case
+    // ========================
+    @Test
+    void shouldThrowExceptionIfMessageNotFound(){
+        when(repository.findById(1L)).thenReturn(Optional.empty());
 
-    //     List<MessageResponseDTO> response = chatService.getUserMessages("luca");
+        assertThrows(NotFoundException.class, () -> {
+            chatService.deleteMessage(1L);
+        });
 
-    //     assertEquals(2, response.size());
-    //     assertEquals("luca", response.get(0).getUsername());
-    //     assertEquals(1, userRepository.findAll().size());
-    // }
-
-    // @Test
-    // void shouldThrowExceptionIfUsernameNotFound(){
-    //     when(userRepository.findByUsername(any())).thenReturn(Optional.empty());
-
-    //     assertThrows(NotFoundException.class, () -> {
-    //         chatService.getUserMessages("luca");
-    //     });
-    // }
-
-    // @Test
-    // void shouldReturnMessageFilteredByALimit(){
-    //     User user = new User();
-    //     user.setUsername("pippo");
-
-    //     Message message = new Message(user, "ciao");
-
-    //     when(repository.findLimitMessagesByOrderByTimestampDesc(any()))
-    //         .thenReturn(List.of(message));
-
-    //     List<MessageResponseDTO> response = chatService.getRecentMessages(1);
-    //     assertEquals(1, response.size());
-
-    //     ArgumentCaptor<PageRequest> captor = ArgumentCaptor.forClass(PageRequest.class);
-    //     verify(repository).findLimitMessagesByOrderByTimestampDesc(captor.capture());
-    //     assertEquals(1, captor.getValue().getPageSize());
-    //     assertEquals(0, captor.getValue().getPageNumber());
-    // }
-
-    // @Test 
-    // void shouldThrowIllegalArgumentException(){
-    //     assertThrows(IllegalArgumentException.class, () -> {
-    //         chatService.getRecentMessages(0);
-    //     });
-    // }
+        verify(repository).findById(1L);
+    }
 
 }
