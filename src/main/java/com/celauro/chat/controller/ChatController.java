@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.celauro.chat.DTO.MessageRequestDTO;
 import com.celauro.chat.DTO.MessageResponseDTO;
-import com.celauro.chat.service.ChatService;
+import com.celauro.chat.service.MessageService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class ChatController {
 
     // private final MessageRepository repository;
-    private final ChatService service;
+    private final MessageService service;
 
     @GetMapping("/hello")
     public String hello(){
