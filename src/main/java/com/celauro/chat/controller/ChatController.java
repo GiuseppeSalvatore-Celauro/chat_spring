@@ -54,7 +54,7 @@ public class ChatController {
         return service.getUserMessages(username);
     }
     
-    @DeleteMapping("/messages/delete/{id}")
+    @DeleteMapping("/messages/{id}")
     public MessageResponseDTO delete(@PathVariable @Valid long id){
         return service.deleteMessage(id);
     }
