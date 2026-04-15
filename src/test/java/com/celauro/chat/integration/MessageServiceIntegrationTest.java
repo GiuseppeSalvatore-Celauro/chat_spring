@@ -15,8 +15,7 @@ import jakarta.transaction.Transactional;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 @ActiveProfiles("test")
 @SpringBootTest
@@ -92,9 +91,8 @@ public class MessageServiceIntegrationTest {
         List<MessageResponseDTO> messages = messageService.getFilteredList(20, "salvatore", null);
 
         assertEquals(3, messages.size());
-        assertEquals("salvatore", messages.get(0).getUsername());
-        assertEquals("salvatore", messages.get(1).getUsername());
-        assertEquals("salvatore", messages.get(2).getUsername());
+        assertTrue(messages.stream()
+                .allMatch(m -> m.getUsername().equals("salvatore")));
     }
 
     // ========================
@@ -113,6 +111,17 @@ public class MessageServiceIntegrationTest {
         assertEquals("secondo", messages.getFirst().getText());
     }
 
+    // ========================
+    // Search message from text - edge case
+    // ========================
+    @Test
+    void shouldSearchTextIgnoringCase(){
+        messageService.createMessage(createRequest("prova", "Secondo testo"));
+
+        List<MessageResponseDTO> messages = messageService.getFilteredList(20, null, "secondo");
+
+        assertEquals(1, messages.size());
+    }
     // ========================
     // Search message from both username and text
     // ========================

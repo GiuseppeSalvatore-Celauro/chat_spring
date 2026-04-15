@@ -173,7 +173,7 @@ public class ChatControllerTest {
 
         when(messageService.deleteMessage(1L)).thenReturn(response);
 
-        mockMvc.perform(delete("/api/chat/messages/delete/1"))
+        mockMvc.perform(delete("/api/chat/messages/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value("prova"));
 
@@ -208,7 +208,7 @@ public class ChatControllerTest {
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].text").value("secondo"));
 
-        verify(messageService).getFilteredList(any(), any(), any());
+        verify(messageService).getFilteredList(eq(20), eq("prova"), eq("sec"));
     }
 
     // ========================
@@ -226,7 +226,7 @@ public class ChatControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(3));
 
-        verify(messageService).getFilteredList(any(), any(), any());
+        verify(messageService).getFilteredList(eq(20), eq("prova"), eq(null));
     }
 
     @Test
@@ -241,7 +241,22 @@ public class ChatControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1));
 
-        verify(messageService).getFilteredList(any(), any(), any());
+        verify(messageService).getFilteredList(eq(20), eq(null), eq("sec"));
+    }
+
+    @Test
+    void shouldReturnFilteredListOfMessage_whenNoParams() throws Exception{
+        MessageResponseDTO response = createResponse("prova", "primo");
+        MessageResponseDTO response1 = createResponse("prova", "secondo");
+        MessageResponseDTO response2 = createResponse("prova", "terzo");
+
+        when(messageService.getFilteredList(any(), any(), any())).thenReturn(List.of(response2, response1, response));
+
+        mockMvc.perform(get("/api/chat/messages/search"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(3));
+
+        verify(messageService).getFilteredList(eq(20), eq(null), eq(null));
     }
 
     private MessageResponseDTO createResponse(String username, String text){

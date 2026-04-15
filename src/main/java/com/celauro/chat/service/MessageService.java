@@ -81,18 +81,21 @@ public class MessageService {
         if(limit <= 0) throw  new IllegalArgumentException("Non sono ammessi limiti inferiori a zero");
         if(limit > MAX_AMOUNT_OF_MESSAGES) limit = MAX_AMOUNT_OF_MESSAGES;
 
+        boolean hasUsername = username != null && !username.isBlank();
+        boolean hasText = textContains != null && !textContains.isBlank();
+
+        if(!hasText && !hasUsername) return getRecentMessages(limit);
+
         PageRequest pageable = PageRequest.of(0, limit);
 
         List<Message> messageList;
 
-        if(username != null && textContains != null) {
+        if(hasUsername && hasText) {
             messageList = messageRepository.findMessageByUserUsernameAndTextContainingIgnoreCaseOrderByTimestampDesc(username, textContains, pageable);
-        }else if(textContains != null){
+        }else if(hasText){
             messageList = messageRepository.findMessageByTextContainingIgnoreCaseOrderByTimestampDesc(textContains, pageable);
-        }else if(username != null){
-            messageList = messageRepository.findMessageByUserUsernameOrderByTimestampDesc(username, pageable);
         }else{
-            return getRecentMessages(limit);
+            messageList = messageRepository.findMessageByUserUsernameOrderByTimestampDesc(username, pageable);
         }
 
         return toListOfDto(messageList);

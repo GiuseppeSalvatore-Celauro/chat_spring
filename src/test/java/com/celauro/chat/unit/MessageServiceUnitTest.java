@@ -232,6 +232,10 @@ public class MessageServiceUnitTest {
 
         List<MessageResponseDTO> messages = messageService.getFilteredList(20, "test", "mes");
 
+        assertEquals(1, messages.size());
+        assertEquals("test", messages.getFirst().getUsername());
+        assertEquals("Messaggio", messages.getFirst().getText());
+
         verify(messageRepository).findMessageByUserUsernameAndTextContainingIgnoreCaseOrderByTimestampDesc(any(), any(), any());
     }
 
@@ -250,7 +254,7 @@ public class MessageServiceUnitTest {
     }
 
     @Test
-    void shouldClapMessages_whenLimitIsGreaterThen100(){
+    void shouldClampMessages_whenLimitIsGreaterThen100(){
         User user = new User();
         user.setUsername("test");
         List<Message> messages = new ArrayList<>();
@@ -265,26 +269,8 @@ public class MessageServiceUnitTest {
 
         assertEquals(100, response.size());
 
-        verify(messageService).getFilteredList(any(), any(), any());
+        verify(messageRepository).findMessageByUserUsernameAndTextContainingIgnoreCaseOrderByTimestampDesc(any(), any(), any());
 
-    }
-
-    @Test
-    void shouldReturnMessage_whenTextIsCaseInsensitive(){
-        User user = new User();
-        user.setUsername("test");
-
-        Message message = new Message();
-        message.setUser(user);
-        message.setText("Messaggio");
-
-        when(messageRepository.findMessageByTextContainingIgnoreCaseOrderByTimestampDesc(any(String.class), any(PageRequest.class))).thenReturn(List.of(message));
-
-        List<MessageResponseDTO> messages = messageService.getFilteredList(20, null, "mes");
-
-        assertEquals(1, messages.size());
-        assertEquals("Messaggio", messages.getFirst().getText());
-        verify(messageRepository).findMessageByTextContainingIgnoreCaseOrderByTimestampDesc(any(), any());
     }
 
 }
