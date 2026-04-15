@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.celauro.chat.DTO.MessageRequestDTO;
@@ -22,8 +23,10 @@ import lombok.RequiredArgsConstructor;
 public class MessageService {
 
     private final NotificationService notificationService;
-    private final MessageRepository messageRespository;
+    private final MessageRepository messageRepository;
     private final UserService userService;
+
+    private static final int MAX_AMOUNT_OF_MESSAGES = 100;
 
     @Transactional
     public MessageResponseDTO createMessage(MessageRequestDTO request){
@@ -32,7 +35,7 @@ public class MessageService {
 
         Message message = createNewMessage(request, user);
 
-        messageRespository.save(message);
+        messageRepository.save(message);
 
         notificationService.createNotification(request.getUsername(), request.getText());
 
@@ -41,7 +44,7 @@ public class MessageService {
     }
 
     public List<MessageResponseDTO> getMessageDesc() {
-        List<Message> messages = messageRespository.findAllByOrderByTimestampDesc();
+        List<Message> messages = messageRepository.findAllByOrderByTimestampDesc();
         Logger.info("Spedita lista messaggi");
         return toListOfDto(messages);
     }
@@ -51,7 +54,7 @@ public class MessageService {
         
         PageRequest pageable = PageRequest.of(0, limit);
 
-        List<Message> messages = messageRespository.findLimitMessagesByOrderByTimestampDesc(pageable);
+        List<Message> messages = messageRepository.findLimitMessagesByOrderByTimestampDesc(pageable);
 
         Logger.info("Spedita lista messaggi recenti");
         return toListOfDto(messages);
@@ -60,19 +63,40 @@ public class MessageService {
     public List<MessageResponseDTO> getUserMessages(String username){
         User user = userService.getOrThrowExceptionUserByUsername(username);
 
-        List<Message> messages = messageRespository.findByUserOrderByTimestampDesc(user);
+        List<Message> messages = messageRepository.findByUserOrderByTimestampDesc(user);
                                             
         Logger.info("Spedita lista messaggi filtrati per utente");
         return toListOfDto(messages);
     }
 
     public MessageResponseDTO deleteMessage(long id) {
-        Message message = messageRespository.findById(id).orElseThrow(() -> new NotFoundException("Messaggio non esiste"));
+        Message message = messageRepository.findById(id).orElseThrow(() -> new NotFoundException("Messaggio non esiste"));
         
-        messageRespository.delete(message);
+        messageRepository.delete(message);
 
         Logger.info("Messaggio eliminato");
         return toDto(message);
+    }
+
+    public List<MessageResponseDTO> getFilteredList(Integer limit, String username, String textContains) {
+        if(limit <= 0) throw  new IllegalArgumentException("Non sono ammessi limiti inferiori a zero");
+        if(limit > MAX_AMOUNT_OF_MESSAGES) limit = MAX_AMOUNT_OF_MESSAGES;
+
+        PageRequest pageable = PageRequest.of(0, limit);
+
+        List<Message> messageList = new ArrayList<>();
+
+        if(username != null && textContains != null) {
+            messageList = messageRepository.findMessageByUserUsernameAndTextContainingIgnoreCaseOrderByTimestampDesc(username, textContains, pageable);
+        }else if(textContains != null){
+            messageList = messageRepository.findMessageByTextContainingIgnoreCaseOrderByTimestampDesc(textContains, pageable);
+        }else if(username != null){
+            messageList = messageRepository.findMessageByUserUsernameOrderByTimestampDesc(username, pageable);
+        }else{
+            return getRecentMessages(limit);
+        }
+
+        return toListOfDto(messageList);
     }
 
     private List<MessageResponseDTO> toListOfDto(List<Message> messages){
@@ -101,4 +125,5 @@ public class MessageService {
         message.setTimestamp(System.currentTimeMillis());
         return message;
     }
+
 }

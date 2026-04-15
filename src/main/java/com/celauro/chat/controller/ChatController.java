@@ -1,5 +1,6 @@
 package com.celauro.chat.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -57,6 +58,15 @@ public class ChatController {
     @DeleteMapping("/messages/{id}")
     public MessageResponseDTO delete(@PathVariable @Valid long id){
         return service.deleteMessage(id);
+    }
+
+    @GetMapping("/messages/search")
+    public List<MessageResponseDTO> showListOfMessageWithFilter(
+            @RequestParam(name="limit", defaultValue = "20") Integer limit,
+            @RequestParam(name="username", required = false) String username,
+            @RequestParam(name="textContains", required = false) String textContains
+    ){
+        return service.getFilteredList(limit, username, textContains);
     }
 
     // @GetMapping("/sleep-db")
