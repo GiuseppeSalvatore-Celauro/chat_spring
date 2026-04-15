@@ -192,6 +192,58 @@ public class ChatControllerTest {
                 .andExpect(status().isNotFound());
     }
 
+    // ========================
+    // Search message
+    // ========================
+    @Test
+    void shouldReturnFilteredListOfMessage_whenBothUsernameAndTextContainsArePresent() throws Exception{
+        MessageResponseDTO response = createResponse("prova", "primo");
+        MessageResponseDTO response1 = createResponse("prova", "secondo");
+        MessageResponseDTO response2 = createResponse("prova", "terzo");
+
+        when(messageService.getFilteredList(any(), any(), any())).thenReturn(List.of(response1));
+
+        mockMvc.perform(get("/api/chat/messages/search?username=prova&textContains=sec"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].text").value("secondo"));
+
+        verify(messageService).getFilteredList(any(), any(), any());
+    }
+
+    // ========================
+    // Search message - edge cases
+    // ========================
+    @Test
+    void shouldReturnFilteredListOfMessage_whenOnlyUsernameIsPresent() throws Exception{
+        MessageResponseDTO response = createResponse("prova", "primo");
+        MessageResponseDTO response1 = createResponse("prova", "secondo");
+        MessageResponseDTO response2 = createResponse("prova", "terzo");
+
+        when(messageService.getFilteredList(any(), any(), any())).thenReturn(List.of(response2, response1, response));
+
+        mockMvc.perform(get("/api/chat/messages/search?username=prova"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(3));
+
+        verify(messageService).getFilteredList(any(), any(), any());
+    }
+
+    @Test
+    void shouldReturnFilteredListOfMessage_whenOnlyTextContainsIsPresent() throws Exception{
+        MessageResponseDTO response = createResponse("prova", "primo");
+        MessageResponseDTO response1 = createResponse("prova", "secondo");
+        MessageResponseDTO response2 = createResponse("prova", "terzo");
+
+        when(messageService.getFilteredList(any(), any(), any())).thenReturn(List.of(response1));
+
+        mockMvc.perform(get("/api/chat/messages/search?textContains=sec"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1));
+
+        verify(messageService).getFilteredList(any(), any(), any());
+    }
+
     private MessageResponseDTO createResponse(String username, String text){
         MessageResponseDTO r = new MessageResponseDTO();
         r.setUsername(username);
