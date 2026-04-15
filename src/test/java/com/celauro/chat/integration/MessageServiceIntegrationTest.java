@@ -80,6 +80,72 @@ public class MessageServiceIntegrationTest {
         assertEquals("Secondo", message.getText());
     }
 
+    // ========================
+    // Search message from username
+    // ========================
+    @Test
+    void shouldReturnUserMessagesFromSearchQuery(){
+        messageService.createMessage(createRequest("salvatore", "primo"));
+        messageService.createMessage(createRequest("salvatore", "secondo"));
+        messageService.createMessage(createRequest("salvatore", "terzo"));
+
+        List<MessageResponseDTO> messages = messageService.getFilteredList(20, "salvatore", null);
+
+        assertEquals(3, messages.size());
+        assertEquals("salvatore", messages.get(0).getUsername());
+        assertEquals("salvatore", messages.get(1).getUsername());
+        assertEquals("salvatore", messages.get(2).getUsername());
+    }
+
+    // ========================
+    // Search message from text
+    // ========================
+    @Test
+    void shouldReturnMessagesThatContainText(){
+        messageService.createMessage(createRequest("salvatore", "primo"));
+        messageService.createMessage(createRequest("pippo", "secondo"));
+        messageService.createMessage(createRequest("mario", "terzo"));
+
+        List<MessageResponseDTO> messages = messageService.getFilteredList(20, null, "sec");
+
+        assertEquals(1, messages.size());
+        assertEquals("pippo", messages.getFirst().getUsername());
+        assertEquals("secondo", messages.getFirst().getText());
+    }
+
+    // ========================
+    // Search message from both username and text
+    // ========================
+    @Test
+    void shouldReturnUserMessagesThatContainText(){
+        messageService.createMessage(createRequest("salvatore", "primo"));
+        messageService.createMessage(createRequest("pippo", "secondo"));
+        messageService.createMessage(createRequest("salvatore", "terzo"));
+
+        List<MessageResponseDTO> messages = messageService.getFilteredList(20, "salvatore", "te");
+
+        assertEquals(1, messages.size());
+        assertEquals("salvatore", messages.getFirst().getUsername());
+        assertEquals("terzo", messages.getFirst().getText());
+    }
+
+    // ========================
+    // Search message with default value
+    // ========================
+    @Test
+    void shouldReturn20Messages(){
+        for(int i = 0; i <= 30; i++){
+            messageService.createMessage(createRequest("salvatore", "msg n:" + i));
+        }
+
+        List<MessageResponseDTO> messages = messageService.getFilteredList(20, null, null);
+
+        assertEquals(20, messages.size());
+        assertEquals("salvatore", messages.getFirst().getUsername());
+        assertEquals("msg n:30", messages.getFirst().getText());
+    }
+
+
     private MessageRequestDTO createRequest(String username, String text){
         MessageRequestDTO r = new MessageRequestDTO();
         r.setUsername(username);

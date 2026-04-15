@@ -216,4 +216,75 @@ public class MessageServiceUnitTest {
         verify(messageRepository).findById(1L);
     }
 
+    // ========================
+    // Search messages
+    // ========================
+    @Test
+    void shouldReturnFilteredMessages(){
+        User user = new User();
+        user.setUsername("test");
+
+        Message message = new Message();
+        message.setUser(user);
+        message.setText("Messaggio");
+
+        when(messageRepository.findMessageByUserUsernameAndTextContainingIgnoreCaseOrderByTimestampDesc(any(String.class), any(String.class), any(PageRequest.class))).thenReturn(List.of(message));
+
+        List<MessageResponseDTO> messages = messageService.getFilteredList(20, "test", "mes");
+
+        verify(messageRepository).findMessageByUserUsernameAndTextContainingIgnoreCaseOrderByTimestampDesc(any(), any(), any());
+    }
+
+    // ========================
+    // Search messages - Edge cases
+    // ========================
+    @Test
+    void shouldThrowException_whenLimitIsZeroOrNegativeInSearch(){
+        assertThrows(IllegalArgumentException.class, () -> {
+            messageService.getFilteredList(0, null, null);
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            messageService.getFilteredList(-1, null, null);
+        });
+    }
+
+    @Test
+    void shouldClapMessages_whenLimitIsGreaterThen100(){
+        User user = new User();
+        user.setUsername("test");
+        List<Message> messages = new ArrayList<>();
+        for(int i=0; i < 100; i++){
+            Message message = new Message(user, "messaggio numero: " + i);
+            messages.add(message);
+        }
+
+        when(messageRepository.findMessageByUserUsernameAndTextContainingIgnoreCaseOrderByTimestampDesc(any(String.class), any(String.class), any(PageRequest.class))).thenReturn(messages);
+
+        List<MessageResponseDTO> response = messageService.getFilteredList(110, "test", "mes");
+
+        assertEquals(100, response.size());
+
+        verify(messageService).getFilteredList(any(), any(), any());
+
+    }
+
+    @Test
+    void shouldReturnMessage_whenTextIsCaseInsensitive(){
+        User user = new User();
+        user.setUsername("test");
+
+        Message message = new Message();
+        message.setUser(user);
+        message.setText("Messaggio");
+
+        when(messageRepository.findMessageByTextContainingIgnoreCaseOrderByTimestampDesc(any(String.class), any(PageRequest.class))).thenReturn(List.of(message));
+
+        List<MessageResponseDTO> messages = messageService.getFilteredList(20, null, "mes");
+
+        assertEquals(1, messages.size());
+        assertEquals("Messaggio", messages.getFirst().getText());
+        verify(messageRepository).findMessageByTextContainingIgnoreCaseOrderByTimestampDesc(any(), any());
+    }
+
 }
