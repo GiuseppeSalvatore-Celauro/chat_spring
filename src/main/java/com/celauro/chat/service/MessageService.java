@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.celauro.chat.DTO.MessageRequestDTO;
@@ -84,7 +83,7 @@ public class MessageService {
 
         PageRequest pageable = PageRequest.of(0, limit);
 
-        List<Message> messageList = new ArrayList<>();
+        List<Message> messageList;
 
         if(username != null && textContains != null) {
             messageList = messageRepository.findMessageByUserUsernameAndTextContainingIgnoreCaseOrderByTimestampDesc(username, textContains, pageable);
