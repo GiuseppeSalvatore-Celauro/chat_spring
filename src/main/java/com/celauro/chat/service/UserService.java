@@ -2,6 +2,7 @@ package com.celauro.chat.service;
 
 import com.celauro.chat.DTO.UserRequestDTO;
 import com.celauro.chat.DTO.UserResponseDTO;
+import com.celauro.chat.utils.Logger;
 import org.springframework.stereotype.Service;
 
 import com.celauro.chat.entity.User;
@@ -22,12 +23,15 @@ public class UserService {
 
         repository.save(user);
 
+        Logger.info("Effettuata creazione utente");
         return toDto(user);
     }
 
     public User getOrThrowExceptionUserByUsername(String username){
         User user = repository.findByUsername(username)
                                 .orElseThrow(() -> new NotFoundException("Nessun user trovato"));
+
+        Logger.info("Utente trovato");
         return user;
     }
 

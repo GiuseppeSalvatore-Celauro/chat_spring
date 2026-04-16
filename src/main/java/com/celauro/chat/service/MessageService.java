@@ -99,6 +99,7 @@ public class MessageService {
             messageList = messageRepository.findMessageByUserUsernameOrderByTimestampDesc(username, pageable);
         }
 
+        Logger.info("Spedita lista messaggi filtrati");
         return toListOfDto(messageList);
     }
 
@@ -110,6 +111,7 @@ public class MessageService {
             throw new NotFoundException("Questo utente non ha mandato nessun messaggio");
         }
 
+        Logger.info("Spedito conteggio dei messaggi totali");
         return new MessageCountResponseDTO(username, numberOfMessages);
     }
 
