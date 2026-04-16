@@ -120,6 +120,18 @@ public class MessageService {
         return new MessageCountResponseDTO(username, numberOfMessages);
     }
 
+    public List<MessageResponseDTO> getUserConversations(String username1, String username2) {
+        userService.getOrThrowExceptionUserByUsername(username1, "Primo user non esiste");
+        userService.getOrThrowExceptionUserByUsername(username2, "Secondo user non esiste");
+
+        System.out.println(username1);
+        System.out.println(username2);
+
+        List<Message> conversation = messageRepository.findConversation(username1, username2);
+
+        return toListOfDto(conversation);
+    }
+
     private List<MessageResponseDTO> toListOfDto(List<Message> messages){
         List<MessageResponseDTO> response = new ArrayList<>();
     
@@ -148,5 +160,4 @@ public class MessageService {
         message.setTimestamp(System.currentTimeMillis());
         return message;
     }
-
 }

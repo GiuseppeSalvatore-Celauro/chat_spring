@@ -57,14 +57,19 @@ public class ChatController {
     public List<MessageResponseDTO> showListOfMessageWithFilter(
             @RequestParam(name="limit", defaultValue = "20") Integer limit,
             @RequestParam(name="username", required = false) String username,
-            @RequestParam(name="textContains", required = false) String textContains
-    ){
+            @RequestParam(name="textContains", required = false) String textContains)
+    {
         return messageService.getFilteredList(limit, username, textContains);
     }
 
     @GetMapping("/messages/count")
     public MessageCountResponseDTO showUserCountOfMessages(@RequestParam(name = "username") String username){
         return messageService.getCountOfMessages(username);
+    }
+
+    @GetMapping("/messages/conversation")
+    public List<MessageResponseDTO> showUserConversations(@RequestParam(name = "user1") String user1, @RequestParam(name = "user2") String user2){
+        return messageService.getUserConversations(user1, user2);
     }
 
     // ========================
@@ -79,6 +84,7 @@ public class ChatController {
     public UserResponseDTO createUser(@RequestBody @Valid UserRequestDTO request){
         return userService.createUser(request);
     }
+
     // ========================
     // DELETE Endpoints
     // ========================
