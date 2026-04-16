@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -48,22 +49,29 @@ public class MessageServiceUnitTest {
     @Test
     void shouldCreateMessage_whenValidRequest_returnCorrectResponse(){
         MessageRequestDTO request = new MessageRequestDTO();
-        request.setUsername("testUsername");
+        request.setSender("testUsername");
+        request.setReceiver("testReceiverUsername");
         request.setText("ciao sono un test");
 
-        User user = new User();
-        user.setUsername(request.getUsername());
+        User sender = new User();
+        sender.setUsername(request.getSender());
 
-        when(userService.getOrThrowExceptionUserByUsername("testUsername")).thenReturn(user);
+        User receiver = new User();
+        receiver.setUsername(request.getReceiver());
+
+        when(userService.getOrThrowExceptionUserByUsername(eq("testUsername"), any())).thenReturn(sender);
+        when(userService.getOrThrowExceptionUserByUsername(eq("testReceiverUsername"), any())).thenReturn(receiver);
         when(messageRepository.save(any(Message.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         MessageResponseDTO response = messageService.createMessage(request);
 
         assertNotNull(response);
-        assertEquals("testUsername", response.getUsername());
+        assertEquals("testUsername", response.getSender());
+        assertEquals("testReceiverUsername", response.getReceiver());
         assertEquals("ciao sono un test", response.getText());
 
-        verify(userService).getOrThrowExceptionUserByUsername("testUsername");
+        verify(userService).getOrThrowExceptionUserByUsername(eq("testUsername"), any());
+        verify(userService).getOrThrowExceptionUserByUsername(eq("testReceiverUsername"), any());
         verify(messageRepository).save(any(Message.class));
     }
 
@@ -73,19 +81,21 @@ public class MessageServiceUnitTest {
     @Test
     void shouldThrowException_whenRepositoryFailsDuringSave(){
         MessageRequestDTO request = new MessageRequestDTO();
-        request.setUsername("testUsername");
+        request.setSender("testUsername");
+        request.setReceiver("testReceiverUsername");
         request.setText("ciao sono un test");
 
-        User user = new User();
-        user.setUsername(request.getUsername());
+        User sender = new User();
+        sender.setUsername(request.getSender());
 
+        User receiver = new User();
+        receiver.setUsername(request.getReceiver());
 
-        when(userService.getOrThrowExceptionUserByUsername("testUsername")).thenReturn(user);
+        when(userService.getOrThrowExceptionUserByUsername(eq("testUsername"), any())).thenReturn(sender);
+        when(userService.getOrThrowExceptionUserByUsername(eq("testReceiverUsername"), any())).thenReturn(receiver);
         when(messageRepository.save(any())).thenThrow(new RuntimeException("DB down"));
 
-        assertThrows(RuntimeException.class, () ->{
-            messageService.createMessage(request);
-        });
+        assertThrows(RuntimeException.class, () -> messageService.createMessage(request));
 
         verify(messageRepository).save(any());
     }
@@ -97,11 +107,15 @@ public class MessageServiceUnitTest {
     void shouldReturnMessages_whenLimitsIsValid(){
         int limit = 1;
 
-        User user = new User();
-        user.setUsername("test");
+        User sender = new User();
+        sender.setUsername("test");
+
+        User receiver = new User();
+        receiver.setUsername("testReceiver");
 
         Message message = new Message();
-        message.setUser(user);
+        message.setSender(sender);
+        message.setReceiver(receiver);
         message.setText("test di limite");
 
         when(messageRepository.findLimitMessagesByOrderByTimestampDesc(any(PageRequest.class))).thenReturn(List.of(message));
@@ -110,7 +124,8 @@ public class MessageServiceUnitTest {
 
         assertNotNull(responses);
         assertEquals(limit, responses.size());
-        assertEquals("test", responses.getFirst().getUsername());
+        assertEquals("test", responses.getFirst().getSender());
+        assertEquals("testReceiver", responses.getFirst().getReceiver());
         assertEquals("test di limite", responses.getFirst().getText());
         verify(messageRepository).findLimitMessagesByOrderByTimestampDesc(any(PageRequest.class));
     }
@@ -120,13 +135,9 @@ public class MessageServiceUnitTest {
     // ========================
     @Test
     void shouldThrowException_whenLimitIsZeroOrNegative(){
-        assertThrows(IllegalArgumentException.class, () -> {
-            messageService.getRecentMessages(0);
-        });
+        assertThrows(IllegalArgumentException.class, () -> messageService.getRecentMessages(0));
 
-        assertThrows(IllegalArgumentException.class, () -> {
-            messageService.getRecentMessages(-1);
-        });
+        assertThrows(IllegalArgumentException.class, () -> messageService.getRecentMessages(-1));
     }
 
     @Test
@@ -141,11 +152,15 @@ public class MessageServiceUnitTest {
     
     @Test
     void shouldReturnLargeNumberOfMessages_whenRepositoryReturnsMany(){
-        User user = new User();
-        user.setUsername("test");
+        User sender = new User();
+        sender.setUsername("test");
+
+        User receiver = new User();
+        receiver.setUsername("testReceiver");
+
         List<Message> messages = new ArrayList<>();
         for(int i=0; i < 100; i++){
-            Message message = new Message(user, "messaggio numero: " + i);
+            Message message = new Message(sender, receiver,"messaggio numero: " + i);
             messages.add(message);
         }
 
@@ -160,11 +175,15 @@ public class MessageServiceUnitTest {
 
     @Test
     void shouldReturnAllMessages_whenRepositoryReturnsLessThenLimit(){
-        User user = new User();
-        user.setUsername("test");
+        User sender = new User();
+        sender.setUsername("test");
+
+        User receiver = new User();
+        receiver.setUsername("testReceiver");
 
         Message message = new Message();
-        message.setUser(user);
+        message.setSender(sender);
+        message.setReceiver(receiver);
         message.setText("Messaggio");
 
         when(messageRepository.findLimitMessagesByOrderByTimestampDesc(any(PageRequest.class))).thenReturn(List.of(message));
@@ -194,13 +213,11 @@ public class MessageServiceUnitTest {
     // ========================
     @Test
     void shouldThrowExceptionIfUsernameNotFound(){
-        when(userService.getOrThrowExceptionUserByUsername("luca")).thenThrow(new NotFoundException("Nessun user trovato"));
+        when(userService.getOrThrowExceptionUserByUsername(eq("luca"), any())).thenThrow(new NotFoundException("Nessun user trovato"));
 
-        assertThrows(NotFoundException.class, () -> {
-            messageService.getUserMessages("luca");
-        });
+        assertThrows(NotFoundException.class, () -> messageService.getUserMessages("luca"));
 
-        verify(userService).getOrThrowExceptionUserByUsername("luca");
+        verify(userService).getOrThrowExceptionUserByUsername(eq("luca"), any());
     }
 
     // ========================
@@ -210,9 +227,7 @@ public class MessageServiceUnitTest {
     void shouldThrowExceptionIfMessageNotFound(){
         when(messageRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, () -> {
-            messageService.deleteMessage(1L);
-        });
+        assertThrows(NotFoundException.class, () -> messageService.deleteMessage(1L));
 
         verify(messageRepository).findById(1L);
     }
@@ -222,22 +237,27 @@ public class MessageServiceUnitTest {
     // ========================
     @Test
     void shouldReturnFilteredMessages(){
-        User user = new User();
-        user.setUsername("test");
+        User sender = new User();
+        sender.setUsername("test");
+
+        User receiver = new User();
+        receiver.setUsername("testReceiver");
 
         Message message = new Message();
-        message.setUser(user);
+        message.setSender(sender);
+        message.setReceiver(receiver);
         message.setText("Messaggio");
 
-        when(messageRepository.findMessageByUserUsernameAndTextContainingIgnoreCaseOrderByTimestampDesc(any(String.class), any(String.class), any(PageRequest.class))).thenReturn(List.of(message));
+        when(messageRepository.findMessageBySenderUsernameAndTextContainingIgnoreCaseOrderByTimestampDesc(any(String.class), any(String.class), any(PageRequest.class))).thenReturn(List.of(message));
 
         List<MessageResponseDTO> messages = messageService.getFilteredList(20, "test", "mes");
 
         assertEquals(1, messages.size());
-        assertEquals("test", messages.getFirst().getUsername());
+        assertEquals("test", messages.getFirst().getSender());
+        assertEquals("testReceiver", messages.getFirst().getReceiver());
         assertEquals("Messaggio", messages.getFirst().getText());
 
-        verify(messageRepository).findMessageByUserUsernameAndTextContainingIgnoreCaseOrderByTimestampDesc(any(), any(), any());
+        verify(messageRepository).findMessageBySenderUsernameAndTextContainingIgnoreCaseOrderByTimestampDesc(any(), any(), any());
     }
 
     // ========================
@@ -245,32 +265,32 @@ public class MessageServiceUnitTest {
     // ========================
     @Test
     void shouldThrowException_whenLimitIsZeroOrNegativeInSearch(){
-        assertThrows(IllegalArgumentException.class, () -> {
-            messageService.getFilteredList(0, null, null);
-        });
+        assertThrows(IllegalArgumentException.class, () -> messageService.getFilteredList(0, null, null));
 
-        assertThrows(IllegalArgumentException.class, () -> {
-            messageService.getFilteredList(-1, null, null);
-        });
+        assertThrows(IllegalArgumentException.class, () -> messageService.getFilteredList(-1, null, null));
     }
 
     @Test
     void shouldClampMessages_whenLimitIsGreaterThen100(){
-        User user = new User();
-        user.setUsername("test");
+        User sender = new User();
+        sender.setUsername("test");
+
+        User receiver = new User();
+        receiver.setUsername("testReceiver");
+
         List<Message> messages = new ArrayList<>();
         for(int i=0; i < 100; i++){
-            Message message = new Message(user, "messaggio numero: " + i);
+            Message message = new Message(sender, receiver,"messaggio numero: " + i);
             messages.add(message);
         }
 
-        when(messageRepository.findMessageByUserUsernameAndTextContainingIgnoreCaseOrderByTimestampDesc(any(String.class), any(String.class), any(PageRequest.class))).thenReturn(messages);
+        when(messageRepository.findMessageBySenderUsernameAndTextContainingIgnoreCaseOrderByTimestampDesc(any(String.class), any(String.class), any(PageRequest.class))).thenReturn(messages);
 
         List<MessageResponseDTO> response = messageService.getFilteredList(110, "test", "mes");
 
         assertEquals(100, response.size());
 
-        verify(messageRepository).findMessageByUserUsernameAndTextContainingIgnoreCaseOrderByTimestampDesc(any(), any(), any());
+        verify(messageRepository).findMessageBySenderUsernameAndTextContainingIgnoreCaseOrderByTimestampDesc(any(), any(), any());
 
     }
 
@@ -279,23 +299,19 @@ public class MessageServiceUnitTest {
     // ========================
     @Test
     void shouldReturnNumberOfMessages(){
-        User user = new User();
-        user.setUsername("salvatore");
+        User sender = new User();
+        sender.setUsername("test");
 
-        Message message = new Message(user, "primo");
-        Message message1 = new Message(user, "secondo");
-        Message message2 = new Message(user, "terzo");
+        when(userService.getOrThrowExceptionUserByUsername(eq("test"), any())).thenReturn(sender);
 
-        when(userService.getOrThrowExceptionUserByUsername("salvatore")).thenReturn(user);
+        when(messageRepository.countMessageBySenderUsername("test")).thenReturn(3);
 
-        when(messageRepository.countMessageByUserUsername("salvatore")).thenReturn(3);
+        MessageCountResponseDTO response = messageService.getCountOfMessages("test");
 
-        MessageCountResponseDTO response = messageService.getCountOfMessages("salvatore");
-
-        assertEquals("salvatore", response.getUsername());
+        assertEquals("test", response.getUsername());
         assertEquals(3, response.getCount());
 
-        verify(messageRepository).countMessageByUserUsername("salvatore");
+        verify(messageRepository).countMessageBySenderUsername("test");
     }
 
     // ========================
@@ -303,25 +319,21 @@ public class MessageServiceUnitTest {
     // ========================
     @Test
     void shouldThrowException_whenUserHasNoMessages(){
-        User user = new User();
-        user.setUsername("salvatore");
+        User sender = new User();
+        sender.setUsername("test");
 
-        when(userService.getOrThrowExceptionUserByUsername("salvatore")).thenReturn(user);
+        when(userService.getOrThrowExceptionUserByUsername(eq("test"), any())).thenReturn(sender);
 
-        when(messageRepository.countMessageByUserUsername("salvatore")).thenReturn(0);
+        when(messageRepository.countMessageBySenderUsername("test")).thenReturn(0);
 
-        assertThrows(NotFoundException.class, ()->{
-           messageService.getCountOfMessages("salvatore");
-        });
+        assertThrows(NotFoundException.class, ()-> messageService.getCountOfMessages("test"));
     }
 
     @Test
     void shouldThrowException_whenUserDoesNotExist(){
-        when(userService.getOrThrowExceptionUserByUsername("test")).thenThrow(new NotFoundException("not found"));
+        when(userService.getOrThrowExceptionUserByUsername(eq("test"), any())).thenThrow(new NotFoundException("not found"));
 
-        assertThrows(NotFoundException.class, ()->{
-           messageService.getCountOfMessages("test");
-        });
+        assertThrows(NotFoundException.class, ()-> messageService.getCountOfMessages("test"));
     }
 
 }

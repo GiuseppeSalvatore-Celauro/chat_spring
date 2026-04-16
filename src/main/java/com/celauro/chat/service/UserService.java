@@ -27,9 +27,9 @@ public class UserService {
         return toDto(user);
     }
 
-    public User getOrThrowExceptionUserByUsername(String username){
+    public User getOrThrowExceptionUserByUsername(String username, String errorMessage){
         User user = repository.findByUsername(username)
-                                .orElseThrow(() -> new NotFoundException("Nessun user trovato"));
+                                .orElseThrow(() -> new NotFoundException(errorMessage));
 
         Logger.info("Utente trovato");
         return user;

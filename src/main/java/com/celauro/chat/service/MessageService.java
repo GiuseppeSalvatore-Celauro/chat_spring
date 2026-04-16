@@ -31,13 +31,14 @@ public class MessageService {
     @Transactional
     public MessageResponseDTO createMessage(MessageRequestDTO request){
         
-        User user = userService.getOrThrowExceptionUserByUsername(request.getUsername());
+        User senderUser = userService.getOrThrowExceptionUserByUsername(request.getSender(), "User mandante non trovato");
+        User reciverUser = userService.getOrThrowExceptionUserByUsername(request.getReceiver(), "User ricevente non trovato");
 
-        Message message = createNewMessage(request, user);
+        Message message = createNewMessage(request, senderUser, reciverUser);
 
         messageRepository.save(message);
 
-        notificationService.createNotification(request.getUsername(), request.getText());
+        notificationService.createNotification(request.getReceiver(), request.getText());
 
         Logger.info("Messaggio salvato");
         return toDto(message);
@@ -61,9 +62,9 @@ public class MessageService {
     }
 
     public List<MessageResponseDTO> getUserMessages(String username){
-        User user = userService.getOrThrowExceptionUserByUsername(username);
+        User user = userService.getOrThrowExceptionUserByUsername(username, "User non trovato");
 
-        List<Message> messages = messageRepository.findByUserOrderByTimestampDesc(user);
+        List<Message> messages = messageRepository.findBySenderOrderByTimestampDesc(user);
                                             
         Logger.info("Spedita lista messaggi filtrati per utente");
         return toListOfDto(messages);
@@ -92,11 +93,11 @@ public class MessageService {
         List<Message> messageList;
 
         if(hasUsername && hasText) {
-            messageList = messageRepository.findMessageByUserUsernameAndTextContainingIgnoreCaseOrderByTimestampDesc(username, textContains, pageable);
+            messageList = messageRepository.findMessageBySenderUsernameAndTextContainingIgnoreCaseOrderByTimestampDesc(username, textContains, pageable);
         }else if(hasText){
             messageList = messageRepository.findMessageByTextContainingIgnoreCaseOrderByTimestampDesc(textContains, pageable);
         }else{
-            messageList = messageRepository.findMessageByUserUsernameOrderByTimestampDesc(username, pageable);
+            messageList = messageRepository.findMessageBySenderUsernameOrderByTimestampDesc(username, pageable);
         }
 
         if(messageList.isEmpty()){
@@ -108,8 +109,8 @@ public class MessageService {
     }
 
     public MessageCountResponseDTO getCountOfMessages(String username) {
-        User user = userService.getOrThrowExceptionUserByUsername(username);
-        int numberOfMessages = messageRepository.countMessageByUserUsername(user.getUsername());
+        User user = userService.getOrThrowExceptionUserByUsername(username, "User non trovato");
+        int numberOfMessages = messageRepository.countMessageBySenderUsername(user.getUsername());
 
         if(numberOfMessages <= 0){
             throw new NotFoundException("Questo utente non ha mandato nessun messaggio");
@@ -133,15 +134,17 @@ public class MessageService {
         MessageResponseDTO singleResponse = new MessageResponseDTO();
         singleResponse.setId(message.getId());
         singleResponse.setText(message.getText());
-        singleResponse.setUsername(message.getUser().getUsername());
+        singleResponse.setSender(message.getSender().getUsername());
+        singleResponse.setReceiver(message.getReceiver().getUsername());
         singleResponse.setTimestamp(message.getTimestamp());
         return singleResponse;
     }
     
-    private Message createNewMessage(MessageRequestDTO request, User user) {
+    private Message createNewMessage(MessageRequestDTO request, User senderUser, User reciverUser) {
         Message message = new Message();
         message.setText(request.getText());
-        message.setUser(user);
+        message.setSender(senderUser);
+        message.setReceiver(reciverUser);
         message.setTimestamp(System.currentTimeMillis());
         return message;
     }

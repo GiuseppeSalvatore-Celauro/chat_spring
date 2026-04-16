@@ -36,7 +36,7 @@ public class UserServiceUnitTest {
 
         when(repository.findByUsername("test")).thenReturn(Optional.of(user));
 
-        User result = service.getOrThrowExceptionUserByUsername("test");
+        User result = service.getOrThrowExceptionUserByUsername("test", any());
 
         assertEquals("test", result.getUsername());
 
@@ -50,9 +50,7 @@ public class UserServiceUnitTest {
     void shouldThrowException_whenUserNotFound(){
         when(repository.findByUsername("test")).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, ()->{
-           service.getOrThrowExceptionUserByUsername("test");
-        });
+        assertThrows(NotFoundException.class, ()-> service.getOrThrowExceptionUserByUsername("test", any()));
 
         verify(repository).findByUsername("test");
     }

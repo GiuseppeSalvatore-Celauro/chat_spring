@@ -16,12 +16,12 @@ public class Message {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-
     @Column(length = 200)
     private String text;
-    
     @ManyToOne
-    private User user;
+    private User sender;
+    @ManyToOne
+    private User receiver;
 
     private long timestamp;
 
@@ -29,8 +29,9 @@ public class Message {
 
     public Message() {}
 
-    public Message(User user, String text) {
-        this.user = user;
+    public Message(User sender, User receiver, String text) {
+        this.sender = sender;
+        this.receiver = receiver;
         this.text = text;
         this.timestamp = System.currentTimeMillis();
     }    

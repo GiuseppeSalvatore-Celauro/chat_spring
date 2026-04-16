@@ -1,6 +1,5 @@
 package com.celauro.chat.controller;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import com.celauro.chat.DTO.*;

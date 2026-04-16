@@ -34,13 +34,14 @@ public class ChatControllerTest {
     // ========================
     @Test
     void shouldCreateMessage()throws Exception{
-        MessageResponseDTO response = createResponse("prova", "testo di prova");
+        MessageResponseDTO response = createResponse("prova", "provaReceiver" ,"testo di prova");
 
         when(messageService.createMessage(any())).thenReturn(response);
 
         String json = """
                 {
-                    "username": "prova",
+                    "sender": "prova",
+                    "receiver": "provaReceiver",
                     "text": "testo di prova"
                 }
                 """;
@@ -49,7 +50,8 @@ public class ChatControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("prova"))
+                .andExpect(jsonPath("$.sender").value("prova"))
+                .andExpect(jsonPath("$.receiver").value("provaReceiver"))
                 .andExpect(jsonPath("$.text").value("testo di prova"));
 
         verify(messageService).createMessage(any());
@@ -62,7 +64,8 @@ public class ChatControllerTest {
     void shouldThrowException_whenUsernameAndTextNull()throws Exception{
         String json = """
                 {
-                    "username": "",
+                    "sender": "",
+                    "receiver": "",
                     "text": ""
                 }
                 """;
@@ -79,8 +82,9 @@ public class ChatControllerTest {
     void shouldThrowException_whenUsernameTooShort()throws Exception{
         String json = """
                 {
-                    "username": "sa",
-                    "text": "ciao"
+                    "sender": "sa",
+                    "receiver": "or",
+                    "text": "testo di prova"
                 }
                 """;
 
@@ -96,7 +100,8 @@ public class ChatControllerTest {
     void shouldThrowException_whenUsernameAndTextTooLong()throws Exception{
         String json = """
                 {
-                    "username": "asdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdf",
+                    "sender": "asdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdf",
+                    "receiver": "pippo",
                     "text": "ciaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociaociao"
                 }
                 """;
@@ -114,9 +119,9 @@ public class ChatControllerTest {
     // ========================
     @Test
     void shouldReturnListOfMessagesWithDescOrder() throws Exception{
-        MessageResponseDTO response = createResponse("prova", "primo");
-        MessageResponseDTO response1 = createResponse("prova", "secondo");
-        MessageResponseDTO response2 = createResponse("prova", "terzo");
+        MessageResponseDTO response = createResponse("prova", "pippo", "primo");
+        MessageResponseDTO response1 = createResponse("prova", "pippo", "secondo");
+        MessageResponseDTO response2 = createResponse("prova", "pippo", "terzo");
 
         when(messageService.getMessageDesc()).thenReturn(List.of(response2, response1, response));
 
@@ -133,8 +138,8 @@ public class ChatControllerTest {
     // ========================
     @Test
     void shouldReturnNumberOfMessages() throws Exception{
-        MessageResponseDTO response1 = createResponse("prova", "secondo");
-        MessageResponseDTO response2 = createResponse("prova", "terzo");
+        MessageResponseDTO response1 = createResponse("prova", "pippo","secondo");
+        MessageResponseDTO response2 = createResponse("prova", "pippo","terzo");
 
         when(messageService.getRecentMessages(any(Integer.class))).thenReturn(List.of(response2, response1));
 
@@ -151,9 +156,9 @@ public class ChatControllerTest {
     // ========================
     @Test
     void shouldReturnUserMessages() throws Exception{
-        MessageResponseDTO response = createResponse("prova", "primo");
-        MessageResponseDTO response1 = createResponse("prova", "secondo");
-        MessageResponseDTO response2 = createResponse("prova", "terzo");
+        MessageResponseDTO response = createResponse("prova", "pippo","primo");
+        MessageResponseDTO response1 = createResponse("prova", "pippo","secondo");
+        MessageResponseDTO response2 = createResponse("prova", "pippo","terzo");
 
         when(messageService.getUserMessages("prova")).thenReturn(List.of(response2, response1, response));
 
@@ -170,13 +175,13 @@ public class ChatControllerTest {
     // ========================
     @Test
     void shouldDeleteMessages() throws Exception{
-        MessageResponseDTO response = createResponse("prova", "primo");
+        MessageResponseDTO response = createResponse("prova", "pippo","primo");
 
         when(messageService.deleteMessage(1L)).thenReturn(response);
 
         mockMvc.perform(delete("/api/chat/messages/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("prova"));
+                .andExpect(jsonPath("$.sender").value("prova"));
 
         verify(messageService).deleteMessage(1L);
     }
@@ -198,11 +203,9 @@ public class ChatControllerTest {
     // ========================
     @Test
     void shouldReturnFilteredListOfMessage_whenBothUsernameAndTextContainsArePresent() throws Exception{
-        MessageResponseDTO response = createResponse("prova", "primo");
-        MessageResponseDTO response1 = createResponse("prova", "secondo");
-        MessageResponseDTO response2 = createResponse("prova", "terzo");
+        MessageResponseDTO response = createResponse("prova", "pippo","secondo");
 
-        when(messageService.getFilteredList(any(), any(), any())).thenReturn(List.of(response1));
+        when(messageService.getFilteredList(any(), any(), any())).thenReturn(List.of(response));
 
         mockMvc.perform(get("/api/chat/messages/search?username=prova&textContains=sec"))
                 .andExpect(status().isOk())
@@ -217,9 +220,9 @@ public class ChatControllerTest {
     // ========================
     @Test
     void shouldReturnFilteredListOfMessage_whenOnlyUsernameIsPresent() throws Exception{
-        MessageResponseDTO response = createResponse("prova", "primo");
-        MessageResponseDTO response1 = createResponse("prova", "secondo");
-        MessageResponseDTO response2 = createResponse("prova", "terzo");
+        MessageResponseDTO response = createResponse("prova", "pippo","primo");
+        MessageResponseDTO response1 = createResponse("prova", "pippo","secondo");
+        MessageResponseDTO response2 = createResponse("prova", "pippo","terzo");
 
         when(messageService.getFilteredList(any(), any(), any())).thenReturn(List.of(response2, response1, response));
 
@@ -232,11 +235,9 @@ public class ChatControllerTest {
 
     @Test
     void shouldReturnFilteredListOfMessage_whenOnlyTextContainsIsPresent() throws Exception{
-        MessageResponseDTO response = createResponse("prova", "primo");
-        MessageResponseDTO response1 = createResponse("prova", "secondo");
-        MessageResponseDTO response2 = createResponse("prova", "terzo");
+        MessageResponseDTO response = createResponse("prova", "pippo","secondo");
 
-        when(messageService.getFilteredList(any(), any(), any())).thenReturn(List.of(response1));
+        when(messageService.getFilteredList(any(), any(), any())).thenReturn(List.of(response));
 
         mockMvc.perform(get("/api/chat/messages/search?textContains=sec"))
                 .andExpect(status().isOk())
@@ -247,9 +248,9 @@ public class ChatControllerTest {
 
     @Test
     void shouldReturnFilteredListOfMessage_whenNoParams() throws Exception{
-        MessageResponseDTO response = createResponse("prova", "primo");
-        MessageResponseDTO response1 = createResponse("prova", "secondo");
-        MessageResponseDTO response2 = createResponse("prova", "terzo");
+        MessageResponseDTO response = createResponse("prova", "pippo","primo");
+        MessageResponseDTO response1 = createResponse("prova", "pippo","secondo");
+        MessageResponseDTO response2 = createResponse("prova", "pippo","terzo");
 
         when(messageService.getFilteredList(any(), any(), any())).thenReturn(List.of(response2, response1, response));
 
@@ -288,9 +289,10 @@ public class ChatControllerTest {
                 .andExpect(status().isNotFound());
     }
 
-    private MessageResponseDTO createResponse(String username, String text){
+    private MessageResponseDTO createResponse(String senderUsername, String receiverUsername, String text){
         MessageResponseDTO r = new MessageResponseDTO();
-        r.setUsername(username);
+        r.setSender(senderUsername);
+        r.setReceiver(receiverUsername);
         r.setText(text);
         return r;
     }

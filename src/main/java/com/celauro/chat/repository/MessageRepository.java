@@ -12,14 +12,18 @@ import com.celauro.chat.entity.User;
 
 public interface MessageRepository extends JpaRepository<Message, Long>{
     List<Message> findLimitMessagesByOrderByTimestampDesc(PageRequest pageable);
-    List<Message> findMessageByUserUsernameOrderByTimestampDesc(String username, PageRequest pageable);
+    List<Message> findMessageBySenderUsernameOrderByTimestampDesc(String username, PageRequest pageable);
     List<Message> findMessageByTextContainingIgnoreCaseOrderByTimestampDesc(String text, PageRequest pageable);
-    List<Message> findMessageByUserUsernameAndTextContainingIgnoreCaseOrderByTimestampDesc(String username, String text, PageRequest pageable);
-    int countMessageByUserUsername(String username);
+    List<Message> findMessageBySenderUsernameAndTextContainingIgnoreCaseOrderByTimestampDesc(String username, String text, PageRequest pageable);
+    int countMessageBySenderUsername(String username);
     List<Message> findAllByOrderByTimestampDesc();
-    List<Message> findByUserOrderByTimestampDesc(User user);
+    List<Message> findBySenderOrderByTimestampDesc(User user);
     Optional<Message> findById(long id);
-    @Query(value = "select sleep(5);", nativeQuery = true)
-    void sleep();
+
+    // ========================
+    // Custom query
+    // ========================
+//    @Query(value = "select sleep(5);", nativeQuery = true)
+//    void sleep();
 
 }
