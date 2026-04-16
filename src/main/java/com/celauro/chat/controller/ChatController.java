@@ -31,14 +31,12 @@ public class ChatController {
     // private final MessageRepository repository;
     private final MessageService service;
 
+    // ========================
+    // GET Endpoints
+    // ========================
     @GetMapping("/hello")
     public String hello(){
         return "Server is runing";
-    }
-
-    @PostMapping("/message")
-    public MessageResponseDTO sendMessage(@RequestBody @Valid MessageRequestDTO request){
-            return service.createMessage(request);
     }
 
     @GetMapping("/messages")
@@ -55,11 +53,6 @@ public class ChatController {
     public List<MessageResponseDTO> showMessagesFromUser(@PathVariable String username){
         return service.getUserMessages(username);
     }
-    
-    @DeleteMapping("/messages/{id}")
-    public MessageResponseDTO delete(@PathVariable @Valid long id){
-        return service.deleteMessage(id);
-    }
 
     @GetMapping("/messages/search")
     public List<MessageResponseDTO> showListOfMessageWithFilter(
@@ -74,6 +67,24 @@ public class ChatController {
     public MessageCountResponseDTO showUserCountOfMessages(@RequestParam(name = "username") String username){
         return service.getCountOfMessages(username);
     }
+
+    // ========================
+    // POST Endpoints
+    // ========================
+    @PostMapping("/message")
+    public MessageResponseDTO sendMessage(@RequestBody @Valid MessageRequestDTO request){
+            return service.createMessage(request);
+    }
+
+    // ========================
+    // DELETE Endpoints
+    // ========================
+    @DeleteMapping("/messages/{id}")
+    public MessageResponseDTO delete(@PathVariable @Valid long id){
+        return service.deleteMessage(id);
+    }
+
+
 
     // @GetMapping("/sleep-db")
     // public String getMethodName() {
