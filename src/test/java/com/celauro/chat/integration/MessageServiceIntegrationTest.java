@@ -110,6 +110,19 @@ public class MessageServiceIntegrationTest {
     }
 
     // ========================
+    // Search message from username - edge case
+    // ========================
+    @Test
+    void shouldThrowException_whenUserHasNoMessages_InIntegration(){
+        userService.createUser(createUserRequest("salvatore"));
+
+        assertThrows(NotFoundException.class, () -> {
+           messageService.getFilteredList(20, "salvatore", null);
+        });
+
+    }
+
+    // ========================
     // Search message from text
     // ========================
     @Test
@@ -178,6 +191,7 @@ public class MessageServiceIntegrationTest {
         assertEquals(20, messages.size());
         assertEquals("salvatore", messages.getFirst().getUsername());
         assertEquals("msg n:30", messages.getFirst().getText());
+        assertEquals("msg n:11", messages.get(19).getText());
     }
 
     // ========================
@@ -205,6 +219,16 @@ public class MessageServiceIntegrationTest {
         assertThrows(NotFoundException.class, ()->{
             messageService.getCountOfMessages("test");
         });
+    }
+
+    @Test
+    void shouldThrowException_whenUserHasNoMessages(){
+        userService.createUser(createUserRequest("test"));
+
+        assertThrows(NotFoundException.class, ()->{
+           messageService.getCountOfMessages("test");
+        });
+
     }
 
     private MessageRequestDTO createMessageRequest(String username, String text){

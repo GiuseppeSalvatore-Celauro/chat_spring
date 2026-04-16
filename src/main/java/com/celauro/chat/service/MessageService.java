@@ -99,6 +99,10 @@ public class MessageService {
             messageList = messageRepository.findMessageByUserUsernameOrderByTimestampDesc(username, pageable);
         }
 
+        if(messageList.isEmpty()){
+            throw new NotFoundException("Non ci sono elementi");
+        }
+
         Logger.info("Spedita lista messaggi filtrati");
         return toListOfDto(messageList);
     }

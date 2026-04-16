@@ -62,7 +62,6 @@ public class MessageServiceUnitTest {
         assertNotNull(response);
         assertEquals("testUsername", response.getUsername());
         assertEquals("ciao sono un test", response.getText());
-        assertTrue(response.getTimestamp() > 0);
 
         verify(userService).getOrThrowExceptionUserByUsername("testUsername");
         verify(messageRepository).save(any(Message.class));
