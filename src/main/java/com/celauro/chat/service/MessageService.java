@@ -3,6 +3,7 @@ package com.celauro.chat.service;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.celauro.chat.DTO.MessageCountResponseDTO;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -99,6 +100,17 @@ public class MessageService {
         }
 
         return toListOfDto(messageList);
+    }
+
+    public MessageCountResponseDTO getCountOfMessages(String username) {
+        User user = userService.getOrThrowExceptionUserByUsername(username);
+        int numberOfMessages = messageRepository.countMessageByUserUsername(user.getUsername());
+
+        if(numberOfMessages <= 0){
+            throw new NotFoundException("Questo utente non ha mandato nessun messaggio");
+        }
+
+        return new MessageCountResponseDTO(username, numberOfMessages);
     }
 
     private List<MessageResponseDTO> toListOfDto(List<Message> messages){

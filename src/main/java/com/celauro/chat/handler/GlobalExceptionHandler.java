@@ -47,7 +47,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorMessageDTO NotFoundException(NotFoundException e, HttpServletRequest request){
-        Logger.error("Messaggio non trovato", e);
+        Logger.error(e.getMessage(), e);
         return errorFormatter(e, request);
     }
 

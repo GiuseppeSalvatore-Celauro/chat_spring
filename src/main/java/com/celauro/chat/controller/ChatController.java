@@ -3,6 +3,7 @@ package com.celauro.chat.controller;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.celauro.chat.DTO.MessageCountResponseDTO;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -67,6 +68,11 @@ public class ChatController {
             @RequestParam(name="textContains", required = false) String textContains
     ){
         return service.getFilteredList(limit, username, textContains);
+    }
+
+    @GetMapping("/messages/count")
+    public MessageCountResponseDTO showUserCountOfMessages(@RequestParam(name = "username") String username){
+        return service.getCountOfMessages(username);
     }
 
     // @GetMapping("/sleep-db")
