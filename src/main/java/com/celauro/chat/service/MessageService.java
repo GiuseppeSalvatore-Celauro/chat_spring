@@ -31,7 +31,7 @@ public class MessageService {
     @Transactional
     public MessageResponseDTO createMessage(MessageRequestDTO request){
         
-        User user = userService.getOrCreateUser(request.getUsername());
+        User user = userService.getOrThrowExceptionUserByUsername(request.getUsername());
 
         Message message = createNewMessage(request, user);
 
