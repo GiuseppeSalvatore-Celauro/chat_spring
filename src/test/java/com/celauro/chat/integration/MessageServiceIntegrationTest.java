@@ -1,8 +1,6 @@
 package com.celauro.chat.integration;
 
-import com.celauro.chat.DTO.MessageCountResponseDTO;
-import com.celauro.chat.DTO.MessageRequestDTO;
-import com.celauro.chat.DTO.MessageResponseDTO;
+import com.celauro.chat.DTO.*;
 import com.celauro.chat.entity.Message;
 import com.celauro.chat.exception.NotFoundException;
 import com.celauro.chat.repository.MessageRepository;
@@ -29,12 +27,17 @@ public class MessageServiceIntegrationTest {
     @Autowired
     private MessageRepository messageRepository;
 
+    @Autowired
+    private UserService userService;
+
     // ========================
     // Create message
     // ========================
     @Test
     void shouldCreateAndPersistMessage(){
-        MessageResponseDTO response = messageService.createMessage(createRequest("prova", "Testo di prova"));
+        userService.createUser(createUserRequest("prova"));
+
+        MessageResponseDTO response = messageService.createMessage(createMessageRequest("prova", "Testo di prova"));
 
         assertNotNull(response);
 
@@ -50,10 +53,13 @@ public class MessageServiceIntegrationTest {
     // ========================
     @Test
     void shouldReturnRecentMessages(){
+        userService.createUser(createUserRequest("prova"));
+        userService.createUser(createUserRequest("prova1"));
+        userService.createUser(createUserRequest("prova2"));
 
-        messageService.createMessage(createRequest("prova", "Primo"));
-        messageService.createMessage(createRequest("prova1", "Secondo"));
-        messageService.createMessage(createRequest("prova2", "Terzo"));
+        messageService.createMessage(createMessageRequest("prova", "Primo"));
+        messageService.createMessage(createMessageRequest("prova1", "Secondo"));
+        messageService.createMessage(createMessageRequest("prova2", "Terzo"));
 
         List<MessageResponseDTO> messages = messageService.getRecentMessages(2);
 
@@ -67,9 +73,13 @@ public class MessageServiceIntegrationTest {
     // ========================
     @Test
     void shouldDeleteMessage(){
-        messageService.createMessage(createRequest("prova", "Primo"));
-        MessageResponseDTO response = messageService.createMessage(createRequest("prova1", "Secondo"));
-        messageService.createMessage(createRequest("prova2", "Terzo"));
+        userService.createUser(createUserRequest("prova"));
+        userService.createUser(createUserRequest("prova1"));
+        userService.createUser(createUserRequest("prova2"));
+
+        messageService.createMessage(createMessageRequest("prova", "Primo"));
+        MessageResponseDTO response = messageService.createMessage(createMessageRequest("prova1", "Secondo"));
+        messageService.createMessage(createMessageRequest("prova2", "Terzo"));
 
 
         MessageResponseDTO message = messageService.deleteMessage(response.getId());
@@ -86,9 +96,11 @@ public class MessageServiceIntegrationTest {
     // ========================
     @Test
     void shouldReturnUserMessagesFromSearchQuery(){
-        messageService.createMessage(createRequest("salvatore", "primo"));
-        messageService.createMessage(createRequest("salvatore", "secondo"));
-        messageService.createMessage(createRequest("salvatore", "terzo"));
+        userService.createUser(createUserRequest("salvatore"));
+
+        messageService.createMessage(createMessageRequest("salvatore", "primo"));
+        messageService.createMessage(createMessageRequest("salvatore", "secondo"));
+        messageService.createMessage(createMessageRequest("salvatore", "terzo"));
 
         List<MessageResponseDTO> messages = messageService.getFilteredList(20, "salvatore", null);
 
@@ -102,9 +114,14 @@ public class MessageServiceIntegrationTest {
     // ========================
     @Test
     void shouldReturnMessagesThatContainText(){
-        messageService.createMessage(createRequest("salvatore", "primo"));
-        messageService.createMessage(createRequest("pippo", "secondo"));
-        messageService.createMessage(createRequest("mario", "terzo"));
+        userService.createUser(createUserRequest("salvatore"));
+        userService.createUser(createUserRequest("pippo"));
+        userService.createUser(createUserRequest("mario"));
+
+
+        messageService.createMessage(createMessageRequest("salvatore", "primo"));
+        messageService.createMessage(createMessageRequest("pippo", "secondo"));
+        messageService.createMessage(createMessageRequest("mario", "terzo"));
 
         List<MessageResponseDTO> messages = messageService.getFilteredList(20, null, "sec");
 
@@ -118,7 +135,9 @@ public class MessageServiceIntegrationTest {
     // ========================
     @Test
     void shouldSearchTextIgnoringCase(){
-        messageService.createMessage(createRequest("prova", "Secondo testo"));
+        userService.createUser(createUserRequest("prova"));
+
+        messageService.createMessage(createMessageRequest("prova", "Secondo testo"));
 
         List<MessageResponseDTO> messages = messageService.getFilteredList(20, null, "secondo");
 
@@ -129,9 +148,12 @@ public class MessageServiceIntegrationTest {
     // ========================
     @Test
     void shouldReturnUserMessagesThatContainText(){
-        messageService.createMessage(createRequest("salvatore", "primo"));
-        messageService.createMessage(createRequest("pippo", "secondo"));
-        messageService.createMessage(createRequest("salvatore", "terzo"));
+        userService.createUser(createUserRequest("salvatore"));
+        userService.createUser(createUserRequest("pippo"));
+
+        messageService.createMessage(createMessageRequest("salvatore", "primo"));
+        messageService.createMessage(createMessageRequest("pippo", "secondo"));
+        messageService.createMessage(createMessageRequest("salvatore", "terzo"));
 
         List<MessageResponseDTO> messages = messageService.getFilteredList(20, "salvatore", "te");
 
@@ -145,8 +167,10 @@ public class MessageServiceIntegrationTest {
     // ========================
     @Test
     void shouldReturn20Messages(){
+        userService.createUser(createUserRequest("salvatore"));
+
         for(int i = 0; i <= 30; i++){
-            messageService.createMessage(createRequest("salvatore", "msg n:" + i));
+            messageService.createMessage(createMessageRequest("salvatore", "msg n:" + i));
         }
 
         List<MessageResponseDTO> messages = messageService.getFilteredList(20, null, null);
@@ -161,8 +185,10 @@ public class MessageServiceIntegrationTest {
     // ========================
     @Test
     void shouldReturnNumberOfMessages(){
+        userService.createUser(createUserRequest("salvatore"));
+
         for(int i = 0; i < 5; i++){
-            messageService.createMessage(createRequest("salvatore", "msg n:" + i));
+            messageService.createMessage(createMessageRequest("salvatore", "msg n:" + i));
         }
 
         MessageCountResponseDTO response = messageService.getCountOfMessages("salvatore");
@@ -181,10 +207,16 @@ public class MessageServiceIntegrationTest {
         });
     }
 
-    private MessageRequestDTO createRequest(String username, String text){
+    private MessageRequestDTO createMessageRequest(String username, String text){
         MessageRequestDTO r = new MessageRequestDTO();
         r.setUsername(username);
         r.setText(text);
+        return r;
+    }
+
+    private UserRequestDTO createUserRequest(String username){
+        UserRequestDTO r = new UserRequestDTO();
+        r.setUsername(username);
         return r;
     }
 }

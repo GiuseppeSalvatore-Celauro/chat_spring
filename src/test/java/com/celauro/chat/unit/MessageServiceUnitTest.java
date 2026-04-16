@@ -54,7 +54,7 @@ public class MessageServiceUnitTest {
         User user = new User();
         user.setUsername(request.getUsername());
 
-        when(userService.getOrCreateUser("testUsername")).thenReturn(user);
+        when(userService.getOrThrowExceptionUserByUsername("testUsername")).thenReturn(user);
         when(messageRepository.save(any(Message.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         MessageResponseDTO response = messageService.createMessage(request);
@@ -64,7 +64,7 @@ public class MessageServiceUnitTest {
         assertEquals("ciao sono un test", response.getText());
         assertTrue(response.getTimestamp() > 0);
 
-        verify(userService).getOrCreateUser("testUsername");
+        verify(userService).getOrThrowExceptionUserByUsername("testUsername");
         verify(messageRepository).save(any(Message.class));
     }
 
@@ -80,7 +80,8 @@ public class MessageServiceUnitTest {
         User user = new User();
         user.setUsername(request.getUsername());
 
-        when(userService.getOrCreateUser("testUsername")).thenReturn(user);
+
+        when(userService.getOrThrowExceptionUserByUsername("testUsername")).thenReturn(user);
         when(messageRepository.save(any())).thenThrow(new RuntimeException("DB down"));
 
         assertThrows(RuntimeException.class, () ->{

@@ -1,5 +1,7 @@
 package com.celauro.chat.unit;
 
+import com.celauro.chat.DTO.UserRequestDTO;
+import com.celauro.chat.DTO.UserResponseDTO;
 import com.celauro.chat.entity.User;
 import com.celauro.chat.exception.NotFoundException;
 import com.celauro.chat.repository.UserRepository;
@@ -60,35 +62,18 @@ public class UserServiceUnitTest {
     // ========================
     @Test
     void shouldCreateUser_whenUserDoesNotExist(){
-        User user = new User();
-        user.setUsername("test");
+        UserRequestDTO request = new UserRequestDTO();
+        request.setUsername("test");
 
-        when(repository.findByUsername("test")).thenReturn(Optional.empty());
+        User user = new User();
+        user.setUsername(request.getUsername());
+
         when(repository.save(any(User.class))).thenReturn(user);
 
-        User result = service.getOrCreateUser("test");
+        UserResponseDTO result = service.createUser(request);
 
         assertEquals("test", result.getUsername());
 
-        verify(repository).findByUsername("test");
         verify(repository).save(any(User.class));
-    }
-
-    // ========================
-    // Create user - Edge case
-    // ========================
-    @Test
-    void shouldReturnExistingUser_whenUserAlreadyExist(){
-        User user = new User();
-        user.setUsername("test");
-
-        when(repository.findByUsername("test")).thenReturn(Optional.of(user));
-
-        User result = service.getOrCreateUser("test");
-
-        assertEquals("test", result.getUsername());
-
-        verify(repository).findByUsername("test");
-        verify(repository, never()).save(any(User.class));
     }
 }
