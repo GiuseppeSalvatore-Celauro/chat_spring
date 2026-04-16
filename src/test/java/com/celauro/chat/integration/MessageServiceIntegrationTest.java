@@ -1,8 +1,10 @@
 package com.celauro.chat.integration;
 
+import com.celauro.chat.DTO.MessageCountResponseDTO;
 import com.celauro.chat.DTO.MessageRequestDTO;
 import com.celauro.chat.DTO.MessageResponseDTO;
 import com.celauro.chat.entity.Message;
+import com.celauro.chat.exception.NotFoundException;
 import com.celauro.chat.repository.MessageRepository;
 import com.celauro.chat.service.MessageService;
 import com.celauro.chat.service.UserService;
@@ -154,6 +156,30 @@ public class MessageServiceIntegrationTest {
         assertEquals("msg n:30", messages.getFirst().getText());
     }
 
+    // ========================
+    // Count messages
+    // ========================
+    @Test
+    void shouldReturnNumberOfMessages(){
+        for(int i = 0; i < 5; i++){
+            messageService.createMessage(createRequest("salvatore", "msg n:" + i));
+        }
+
+        MessageCountResponseDTO response = messageService.getCountOfMessages("salvatore");
+
+        assertEquals("salvatore", response.getUsername());
+        assertEquals(5, response.getCount());
+    }
+
+    // ========================
+    // Count messages - edge case
+    // ========================
+    @Test
+    void shouldThrowException_whenUserDoesNotExist(){
+        assertThrows(NotFoundException.class, ()->{
+            messageService.getCountOfMessages("test");
+        });
+    }
 
     private MessageRequestDTO createRequest(String username, String text){
         MessageRequestDTO r = new MessageRequestDTO();

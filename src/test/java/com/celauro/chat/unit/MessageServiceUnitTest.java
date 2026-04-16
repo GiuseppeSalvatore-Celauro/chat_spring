@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.celauro.chat.DTO.MessageCountResponseDTO;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -271,6 +272,56 @@ public class MessageServiceUnitTest {
 
         verify(messageRepository).findMessageByUserUsernameAndTextContainingIgnoreCaseOrderByTimestampDesc(any(), any(), any());
 
+    }
+
+    // ========================
+    // Count messages
+    // ========================
+    @Test
+    void shouldReturnNumberOfMessages(){
+        User user = new User();
+        user.setUsername("salvatore");
+
+        Message message = new Message(user, "primo");
+        Message message1 = new Message(user, "secondo");
+        Message message2 = new Message(user, "terzo");
+
+        when(userService.getOrThrowExceptionUserByUsername("salvatore")).thenReturn(user);
+
+        when(messageRepository.countMessageByUserUsername("salvatore")).thenReturn(3);
+
+        MessageCountResponseDTO response = messageService.getCountOfMessages("salvatore");
+
+        assertEquals("salvatore", response.getUsername());
+        assertEquals(3, response.getCount());
+
+        verify(messageRepository).countMessageByUserUsername("salvatore");
+    }
+
+    // ========================
+    // Count messages - edge case
+    // ========================
+    @Test
+    void shouldThrowException_whenUserHasNoMessages(){
+        User user = new User();
+        user.setUsername("salvatore");
+
+        when(userService.getOrThrowExceptionUserByUsername("salvatore")).thenReturn(user);
+
+        when(messageRepository.countMessageByUserUsername("salvatore")).thenReturn(0);
+
+        assertThrows(NotFoundException.class, ()->{
+           messageService.getCountOfMessages("salvatore");
+        });
+    }
+
+    @Test
+    void shouldThrowException_whenUserDoesNotExist(){
+        when(userService.getOrThrowExceptionUserByUsername("test")).thenThrow(new NotFoundException("not found"));
+
+        assertThrows(NotFoundException.class, ()->{
+           messageService.getCountOfMessages("test");
+        });
     }
 
 }

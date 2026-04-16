@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.mockito.ArgumentMatchers.any;
 
+import com.celauro.chat.DTO.MessageCountResponseDTO;
 import com.celauro.chat.DTO.MessageResponseDTO;
 import com.celauro.chat.exception.NotFoundException;
 import com.celauro.chat.service.MessageService;
@@ -257,6 +258,34 @@ public class ChatControllerTest {
                 .andExpect(jsonPath("$.length()").value(3));
 
         verify(messageService).getFilteredList(eq(20), eq(null), eq(null));
+    }
+
+    // ========================
+    // Count messages
+    // ========================
+    @Test
+    void shouldReturnNumerOfMessages()throws Exception{
+        MessageCountResponseDTO response = new MessageCountResponseDTO("test", 4);
+
+        when(messageService.getCountOfMessages("test")).thenReturn(response);
+
+        mockMvc.perform(get("/api/chat/messages/count?username=test"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("test"))
+                .andExpect(jsonPath("$.count").value(4));
+
+        verify(messageService).getCountOfMessages("test");
+    }
+
+    // ========================
+    // Count messages - edge case
+    // ========================
+    @Test
+    void shouldReturn404_whenUserDoesNotExist()throws Exception{
+        when(messageService.getCountOfMessages("test")).thenThrow(new NotFoundException("Not found"));
+
+        mockMvc.perform(get("/api/chat/messages/count?username=test"))
+                .andExpect(status().isNotFound());
     }
 
     private MessageResponseDTO createResponse(String username, String text){
