@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 
 import com.celauro.chat.entity.Message;
 import com.celauro.chat.entity.User;
+import org.springframework.data.repository.query.Param;
 
 public interface MessageRepository extends JpaRepository<Message, Long>{
     List<Message> findLimitMessagesByOrderByTimestampDesc(PageRequest pageable);
@@ -34,6 +35,9 @@ public interface MessageRepository extends JpaRepository<Message, Long>{
     (m.sender.username = :u2 AND m.receiver.username = :u1)
     ORDER BY m.timestamp DESC
     """)
-    List<Message> findConversation(String u1, String u2);
+    List<Message> findConversation(
+            @Param("u1")String u1,
+            @Param("u2")String u2
+    );
 
 }

@@ -6,6 +6,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import com.celauro.chat.exception.NotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -48,6 +49,13 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorMessageDTO NotFoundException(NotFoundException e, HttpServletRequest request){
         Logger.error(e.getMessage(), e);
+        return errorFormatter(e, request);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorMessageDTO MissingServletRequestParameterException(MissingServletRequestParameterException e, HttpServletRequest request){
+        Logger.error("Campo della richiesta mancante", e);
         return errorFormatter(e, request);
     }
 

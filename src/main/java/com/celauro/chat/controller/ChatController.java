@@ -35,7 +35,7 @@ public class ChatController {
     // ========================
     @GetMapping("/hello")
     public String hello(){
-        return "Server is runing";
+        return "Server is running";
     }
 
     @GetMapping("/messages")
@@ -68,9 +68,10 @@ public class ChatController {
     }
 
     @GetMapping("/messages/conversation")
-    public List<MessageResponseDTO> showUserConversations(@RequestParam(name = "user1") String user1, @RequestParam(name = "user2") String user2){
-        return messageService.getUserConversations(user1, user2);
+    public List<MessageResponseDTO> showConversationsBetweenUsers(@RequestParam(name = "user1") String user1, @RequestParam(name = "user2") String user2){
+        return messageService.getConversationsBetweenUsers(user1, user2);
     }
+
 
     // ========================
     // POST Endpoints
