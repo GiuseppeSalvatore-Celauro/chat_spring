@@ -235,6 +235,44 @@ public class MessageServiceIntegrationTest {
 
     }
 
+    // ========================
+    // Conversation between users
+    // ========================
+    @Test
+    void shouldReturnConversationBetweenUsers(){
+        userService.createUser(createUserRequest("salvatore"));
+        userService.createUser(createUserRequest("pippo"));
+
+        messageService.createMessage(createMessageRequest("salvatore", "pippo", "primo messaggio"));
+        messageService.createMessage(createMessageRequest("pippo", "salvatore", "secondo messaggio"));
+        messageService.createMessage(createMessageRequest("salvatore", "pippo", "terzo messaggio"));
+
+        List<MessageResponseDTO> r = messageService.getConversationsBetweenUsers("salvatore", "pippo");
+
+        assertEquals(3, r.size());
+        assertEquals("salvatore", r.getFirst().getSender());
+        assertEquals("pippo", r.getFirst().getReceiver());
+        assertEquals("terzo messaggio", r.getFirst().getText());
+        assertEquals("primo messaggio", r.getLast().getText());
+    }
+
+    // ========================
+    // Conversation between users - edge cases
+    // ========================
+    @Test
+    void shouldReturnEmptyList_whenConversationBetweenUsersDoesNotExist(){
+        userService.createUser(createUserRequest("salvatore"));
+        userService.createUser(createUserRequest("pippo"));
+
+        List<MessageResponseDTO> r = messageService.getConversationsBetweenUsers("salvatore", "pippo");
+
+        assertEquals(0, r.size());
+    }
+
+
+    // ========================
+    // Helper methods
+    // ========================
     private MessageRequestDTO createMessageRequest(String sender, String receiver, String text){
         MessageRequestDTO r = new MessageRequestDTO();
         r.setSender(sender);
@@ -248,4 +286,8 @@ public class MessageServiceIntegrationTest {
         r.setUsername(username);
         return r;
     }
+
+
+
+
 }

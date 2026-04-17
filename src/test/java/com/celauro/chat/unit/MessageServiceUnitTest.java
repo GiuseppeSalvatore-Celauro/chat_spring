@@ -6,8 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -334,6 +333,83 @@ public class MessageServiceUnitTest {
         when(userService.getOrThrowExceptionUserByUsername(eq("test"), any())).thenThrow(new NotFoundException("not found"));
 
         assertThrows(NotFoundException.class, ()-> messageService.getCountOfMessages("test"));
+    }
+
+    // ========================
+    // Conversation between two users
+    // ========================
+    @Test
+    void shouldReturnConversation(){
+        User u1 = new User();
+        u1.setUsername("salvatore");
+
+        User u2 = new User();
+        u2.setUsername("pippo");
+
+        Message m1 = new Message(u1, u2, "primo messaggio");
+        Message m2 = new Message(u2, u1, "secondo messaggio");
+        Message m3 = new Message(u1, u2, "terzo messaggio");
+
+        when(userService.getOrThrowExceptionUserByUsername(eq("salvatore"), any())).thenReturn(u1);
+        when(userService.getOrThrowExceptionUserByUsername(eq("pippo"), any())).thenReturn(u2);
+        when(messageRepository.findConversation(eq("salvatore"), eq("pippo"))).thenReturn(List.of(m3,m2,m1));
+
+        List<MessageResponseDTO> r = messageService.getConversationsBetweenUsers(u1.getUsername(), u2.getUsername());
+
+        assertEquals(3, r.size());
+        assertEquals("salvatore", r.getFirst().getSender());
+        assertEquals("pippo", r.getFirst().getReceiver());
+        assertEquals("terzo messaggio", r.getFirst().getText());
+        assertEquals("primo messaggio", r.getLast().getText());
+
+        verify(userService).getOrThrowExceptionUserByUsername(eq("salvatore"), any());
+        verify(userService).getOrThrowExceptionUserByUsername(eq("pippo"), any());
+        verify(messageRepository).findConversation(eq("salvatore"), eq("pippo"));
+    }
+
+    // ========================
+    // Conversation between two users - edge cases
+    // ========================
+    @Test
+    void shouldReturnEmptyList_whenConversationBetweenUsersDoesNotExist(){
+        User u1 = new User();
+        u1.setUsername("salvatore");
+        User u2 = new User();
+        u2.setUsername("pippo");
+
+        when(userService.getOrThrowExceptionUserByUsername(eq("salvatore"), any())).thenReturn(u1);
+        when(userService.getOrThrowExceptionUserByUsername(eq("pippo"), any())).thenReturn(u2);
+        when(messageRepository.findConversation(eq("salvatore"), eq("pippo"))).thenReturn(List.of());
+
+        List<MessageResponseDTO> r = messageService.getConversationsBetweenUsers(u1.getUsername(), u2.getUsername());
+
+        assertTrue(r.isEmpty());
+
+        verify(userService).getOrThrowExceptionUserByUsername(eq("salvatore"), any());
+        verify(userService).getOrThrowExceptionUserByUsername(eq("pippo"), any());
+        verify(messageRepository).findConversation(eq("salvatore"), eq("pippo"));
+    }
+
+    @Test
+    void shouldThrowException_whenSenderDoesNotExist(){
+        when(userService.getOrThrowExceptionUserByUsername(eq("salvatore"), any())).thenThrow(new NotFoundException("not found"));
+
+        assertThrows(NotFoundException.class, () -> messageService.getConversationsBetweenUsers("salvatore", "pippo") );
+
+        verify(messageRepository, never()).findConversation(any(), any());
+    }
+
+    @Test
+    void shouldThrowException_whenReceiverDoesNotExist(){
+        User u1 = new User();
+        u1.setUsername("salvatore");
+
+        when(userService.getOrThrowExceptionUserByUsername(eq("salvatore"), any())).thenReturn(u1);
+        when(userService.getOrThrowExceptionUserByUsername(eq("pippo"), any())).thenThrow(new NotFoundException("not found"));
+
+        assertThrows(NotFoundException.class, () -> messageService.getConversationsBetweenUsers("salvatore", "pippo") );
+
+        verify(messageRepository, never()).findConversation(any(), any());
     }
 
 }

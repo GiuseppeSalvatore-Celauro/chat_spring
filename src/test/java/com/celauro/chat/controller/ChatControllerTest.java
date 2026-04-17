@@ -289,6 +289,48 @@ public class ChatControllerTest {
                 .andExpect(status().isNotFound());
     }
 
+    // ========================
+    // Conversation between users
+    // ========================
+    @Test
+    void shouldReturnConversationBetweenUsers()throws  Exception{
+        MessageResponseDTO r = createResponse("prova", "pippo","primo");
+        MessageResponseDTO r1 = createResponse("pippo", "prova","secondo");
+        MessageResponseDTO r2 = createResponse("prova", "pippo","terzo");
+
+        when(messageService.getConversationsBetweenUsers("prova", "pippo")).thenReturn(List.of(r2,r1,r));
+
+        mockMvc.perform(get("/api/chat/messages/conversation?user1=prova&user2=pippo"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(3))
+                .andExpect(jsonPath("$[0].sender").value("prova"))
+                .andExpect(jsonPath("$[0].receiver").value("pippo"));
+
+        verify(messageService).getConversationsBetweenUsers("prova", "pippo");
+    }
+    // ========================
+    // Conversation between users - edge case
+    // ========================
+    @Test
+    void shouldThrowException_whenSenderDoesNotExist()throws Exception{
+        when(messageService.getConversationsBetweenUsers(eq("salvatore"), any()))
+                .thenThrow(new NotFoundException("not found"));
+
+        mockMvc.perform(get("/api/chat/messages/conversation?user1=salvatore&user2=pippo"))
+                .andExpect(status().isNotFound());
+
+        verify(messageService).getConversationsBetweenUsers(eq("salvatore"), any());
+    }
+
+    @Test
+    void shouldReturn400_whenMissingParams()throws Exception{
+        mockMvc.perform(get("/api/chat/messages/conversation"))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ========================
+    // Helper methods
+    // ========================
     private MessageResponseDTO createResponse(String senderUsername, String receiverUsername, String text){
         MessageResponseDTO r = new MessageResponseDTO();
         r.setSender(senderUsername);
