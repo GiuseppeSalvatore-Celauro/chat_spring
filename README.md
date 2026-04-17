@@ -65,6 +65,7 @@ Work in progress — il progetto è in continua evoluzione.
 ## Progetti correlati
 
 Prima versione (Java + socket):
+https://github.com/GiuseppeSalvatore-Celauro/chatroom_java
 
 ---
 
