@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.mockito.ArgumentMatchers.any;
 
+import com.celauro.chat.DTO.ConversationResponseDTO;
 import com.celauro.chat.DTO.MessageCountResponseDTO;
 import com.celauro.chat.DTO.MessageResponseDTO;
 import com.celauro.chat.exception.NotFoundException;
@@ -329,6 +330,37 @@ public class ChatControllerTest {
     }
 
     // ========================
+    // All user conversations
+    // ========================
+    @Test
+    void shouldReturnUserConversation()throws  Exception{
+        ConversationResponseDTO r = createConversationResponse("pippo", "primo",1L);
+        ConversationResponseDTO r1 = createConversationResponse("marco", "secondo",2L);
+
+        when(messageService.getUserConversations("salvatore")).thenReturn(List.of(r1,r));
+
+        mockMvc.perform(get("/api/chat/messages/conversations/salvatore"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].withUser").value("marco"))
+                .andExpect(jsonPath("$[1].withUser").value("pippo"));
+
+        verify(messageService).getUserConversations("salvatore");
+    }
+
+    // ========================
+    // All user conversations - edge case
+    // ========================
+    @Test
+    void shouldReturnEmptyList_whenUserDoesNotHaveConversation()throws Exception{
+
+        mockMvc.perform(get("/api/chat/messages/conversations/salvatore"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+
+        verify(messageService).getUserConversations(eq("salvatore"));
+    }
+    // ========================
     // Helper methods
     // ========================
     private MessageResponseDTO createResponse(String senderUsername, String receiverUsername, String text){
@@ -337,5 +369,13 @@ public class ChatControllerTest {
         r.setReceiver(receiverUsername);
         r.setText(text);
         return r;
+    }
+
+    private ConversationResponseDTO createConversationResponse(String withUser, String lastMessage, Long timestamp){
+        ConversationResponseDTO c = new ConversationResponseDTO();
+        c.setTimestamp(timestamp);
+        c.setWithUser(withUser);
+        c.setLastMessage(lastMessage);
+        return c;
     }
 }

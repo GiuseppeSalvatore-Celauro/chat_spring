@@ -269,6 +269,41 @@ public class MessageServiceIntegrationTest {
         assertEquals(0, r.size());
     }
 
+    // ========================
+    // All user conversations
+    // ========================
+    @Test
+    void shouldReturnListOfUserConversation(){
+        userService.createUser(createUserRequest("salvatore"));
+        userService.createUser(createUserRequest("pippo"));
+        userService.createUser(createUserRequest("marco"));
+
+        messageService.createMessage(createMessageRequest("salvatore", "marco", "primo messaggio"));
+        messageService.createMessage(createMessageRequest("pippo", "salvatore", "secondo messaggio"));
+        messageService.createMessage(createMessageRequest("marco", "salvatore", "terzo messaggio"));
+
+        List<ConversationResponseDTO> r = messageService.getUserConversations("salvatore");
+
+        assertEquals(2, r.size());
+        assertEquals("marco", r.getFirst().getWithUser());
+        assertEquals("pippo", r.getLast().getWithUser());
+        assertEquals("terzo messaggio", r.getFirst().getLastMessage());
+        assertEquals("secondo messaggio", r.getLast().getLastMessage());
+    }
+
+    // ========================
+    // All user conversations - edge cases
+    // ========================
+    @Test
+    void shouldReturnEmptyList_whenUserDoesNotHaveConversation(){
+        userService.createUser(createUserRequest("salvatore"));
+        userService.createUser(createUserRequest("pippo"));
+
+        List<ConversationResponseDTO> r = messageService.getUserConversations("salvatore");
+
+        assertEquals(0, r.size());
+    }
+
 
     // ========================
     // Helper methods

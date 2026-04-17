@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.celauro.chat.DTO.ConversationResponseDTO;
 import com.celauro.chat.DTO.MessageCountResponseDTO;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -412,4 +413,47 @@ public class MessageServiceUnitTest {
         verify(messageRepository, never()).findConversation(any(), any());
     }
 
+    // ========================
+    // All user conversations
+    // ========================
+    @Test
+    void shouldReturnListOfUserConversations(){
+        User u1 = new User();
+        u1.setUsername("salvatore");
+        User u2 = new User();
+        u2.setUsername("pippo");
+        User u3 = new User();
+        u3.setUsername("marco");
+
+        Message m1 = new Message(u1, u3, "primo messaggio");
+        Message m2 = new Message(u1, u2, "secondo messaggio");
+
+        when(userService.getOrThrowExceptionUserByUsername(eq("salvatore"), any())).thenReturn(u1);
+        when(messageRepository.findUserConversations(eq("salvatore"))).thenReturn(List.of(m2,m1));
+
+        List<ConversationResponseDTO> r = messageService.getUserConversations("salvatore");
+
+        assertEquals(2, r.size());
+        assertEquals("marco", r.getFirst().getWithUser());
+        assertEquals("pippo", r.getLast().getWithUser());
+        assertEquals("primo messaggio", r.getFirst().getLastMessage());
+        assertEquals("secondo messaggio", r.getLast().getLastMessage());
+
+        verify(userService).getOrThrowExceptionUserByUsername(eq("salvatore"), any());
+        verify(messageRepository).findUserConversations(eq("salvatore"));
+    }
+
+    // ========================
+    // All user conversations - edge case
+    // ========================
+    @Test
+    void shouldReturnEmptyList_whenUserDoesNotHaveConversation(){
+        when(messageRepository.findUserConversations(eq("salvatore"))).thenReturn(List.of());
+
+        List<ConversationResponseDTO> r = messageService.getUserConversations("salvatore");
+
+        assertEquals(0, r.size());
+
+        verify(messageRepository).findUserConversations(eq("salvatore"));
+    }
 }
