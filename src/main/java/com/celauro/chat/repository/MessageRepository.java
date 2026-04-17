@@ -40,4 +40,16 @@ public interface MessageRepository extends JpaRepository<Message, Long>{
             @Param("u2")String u2
     );
 
+    @Query( value = """
+    SELECT m FROM Message m
+    WHERE
+        m.sender.username = :username
+    OR
+        m.receiver.username = :username
+    ORDER BY m.timestamp DESC
+    """)
+    List<Message> findUserConversations(
+            @Param("username") String username
+    );
+
 }

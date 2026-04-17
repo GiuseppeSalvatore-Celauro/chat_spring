@@ -1,8 +1,11 @@
 package com.celauro.chat.service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import com.celauro.chat.DTO.ConversationResponseDTO;
 import com.celauro.chat.DTO.MessageCountResponseDTO;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -129,6 +132,39 @@ public class MessageService {
         return toListOfDto(conversation);
     }
 
+    public List<ConversationResponseDTO> getUserConversations(String username) {
+        userService.getOrThrowExceptionUserByUsername(username, "User non esiste");
+
+        List<Message> conversations = messageRepository.findUserConversations(username);
+
+        Map<String, Message> conversationMap = new HashMap<>();
+        for (Message m: conversations){
+            String otherUser = m.getSender().getUsername().equals(username)
+                            ? m.getReceiver().getUsername()
+                            : m.getSender().getUsername();
+
+            if(!conversationMap.containsKey(otherUser)){
+                conversationMap.put(otherUser, m);
+            }
+        }
+
+        return convertMapToDto(conversationMap);
+    }
+
+    private List<ConversationResponseDTO> convertMapToDto(Map<String, Message> lastMessages){
+        List<ConversationResponseDTO> list = new ArrayList<>();
+        for (String key: lastMessages.keySet()){
+            ConversationResponseDTO c = new ConversationResponseDTO();
+            c.setWithUser(key);
+            c.setLastMessage(lastMessages.get(key).getText());
+            c.setTimestamp(lastMessages.get(key).getTimestamp());
+            list.add(c);
+        }
+
+        list.sort((a, b) -> Long.compare(b.getTimestamp(), a.getTimestamp()));
+        return list;
+    }
+
     private List<MessageResponseDTO> toListOfDto(List<Message> messages){
         List<MessageResponseDTO> response = new ArrayList<>();
     
@@ -157,4 +193,6 @@ public class MessageService {
         message.setTimestamp(System.currentTimeMillis());
         return message;
     }
+
+
 }

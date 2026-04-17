@@ -72,6 +72,11 @@ public class ChatController {
         return messageService.getConversationsBetweenUsers(user1, user2);
     }
 
+    @GetMapping("/messages/conversations/{username}")
+    public List<ConversationResponseDTO> showUserConversations(@PathVariable String username){
+        return messageService.getUserConversations(username);
+    }
+
 
     // ========================
     // POST Endpoints
