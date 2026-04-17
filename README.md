@@ -13,7 +13,7 @@ Questo progetto rappresenta l’evoluzione di una prima versione realizzata in J
 - API REST per interazione con il sistema
 - Struttura a livelli (Controller, Service, Repository)
 - Integration tests
-- 
+  
 ---
 
 ## Conversation Preview
