@@ -37,6 +37,8 @@ public class MessageService {
         User senderUser = userService.getOrThrowExceptionUserByUsername(request.getSender(), "User mandante non trovato");
         User reciverUser = userService.getOrThrowExceptionUserByUsername(request.getReceiver(), "User ricevente non trovato");
 
+        if (!senderUser.isOnline()) throw new RuntimeException("Prima di poter inviare un messaggio devi essere connesso");
+
         Message message = createNewMessage(request, senderUser, reciverUser);
 
         messageRepository.save(message);
@@ -133,7 +135,9 @@ public class MessageService {
     }
 
     public List<ConversationResponseDTO> getUserConversations(String username) {
-        userService.getOrThrowExceptionUserByUsername(username, "User non esiste");
+        User user = userService.getOrThrowExceptionUserByUsername(username, "User non esiste");
+
+        if (!user.isOnline()) throw new RuntimeException("Prima di poter inviare un messaggio devi essere connesso");
 
         List<Message> conversations = messageRepository.findUserConversations(username);
 
@@ -151,11 +155,15 @@ public class MessageService {
         return convertMapToDto(conversationMap);
     }
 
+    //=============
+    //Helper methods
+    //=============
     private List<ConversationResponseDTO> convertMapToDto(Map<String, Message> lastMessages){
         List<ConversationResponseDTO> list = new ArrayList<>();
         for (String key: lastMessages.keySet()){
             ConversationResponseDTO c = new ConversationResponseDTO();
             c.setWithUser(key);
+            c.setOnline(userService.getUserStatus(key).isOnline());
             c.setLastMessage(lastMessages.get(key).getText());
             c.setTimestamp(lastMessages.get(key).getTimestamp());
             list.add(c);

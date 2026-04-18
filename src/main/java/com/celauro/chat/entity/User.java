@@ -19,12 +19,15 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-    
     @Column(unique = true)
     private String username;
+    private boolean isOnline;
+    private long lastSeen;
 
-    public User(String username) {
+    public User(String username, boolean isOnline, long lastSeen) {
         this.username = username;
+        this.isOnline = isOnline;
+        this.lastSeen = lastSeen;
     }
 
     

@@ -4,21 +4,12 @@ import java.util.List;
 
 import com.celauro.chat.DTO.*;
 import com.celauro.chat.service.UserService;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.celauro.chat.service.MessageService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.web.bind.annotation.RequestParam;
-
 
 
 @RestController
@@ -77,6 +68,11 @@ public class ChatController {
         return messageService.getUserConversations(username);
     }
 
+    @GetMapping("/users/{username}/status")
+    public UserResponseDTO showUserStatus(@PathVariable String username){
+        return userService.getUserStatus(username);
+    }
+
 
     // ========================
     // POST Endpoints
@@ -89,6 +85,19 @@ public class ChatController {
     @PostMapping("/user")
     public UserResponseDTO createUser(@RequestBody @Valid UserRequestDTO request){
         return userService.createUser(request);
+    }
+
+    // ========================
+    // PUT Endpoints
+    // ========================
+    @PutMapping("/users/login")
+    public UserResponseDTO userLogin(@RequestBody @Valid UserRequestDTO request){
+        return userService.userLogin(request);
+    }
+
+    @PutMapping("/users/logout")
+    public UserResponseDTO userLogout(@RequestBody @Valid UserRequestDTO request){
+        return userService.userLogout(request);
     }
 
     // ========================

@@ -7,4 +7,6 @@ import lombok.Setter;
 @Setter
 public class UserResponseDTO {
     public String Username;
+    public boolean online;
+    public long lastSeen;
 }
