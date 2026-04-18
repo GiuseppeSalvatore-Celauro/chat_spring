@@ -6,9 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.mockito.ArgumentMatchers.any;
 
-import com.celauro.chat.DTO.ConversationResponseDTO;
-import com.celauro.chat.DTO.MessageCountResponseDTO;
-import com.celauro.chat.DTO.MessageResponseDTO;
+import com.celauro.chat.DTO.*;
 import com.celauro.chat.exception.NotFoundException;
 import com.celauro.chat.service.MessageService;
 import com.celauro.chat.service.UserService;
@@ -18,8 +16,10 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
+import java.util.Objects;
 
 @WebMvcTest(ChatController.class)
 public class ChatControllerTest {
@@ -360,9 +360,109 @@ public class ChatControllerTest {
 
         verify(messageService).getUserConversations(eq("salvatore"));
     }
+
+    // ========================
+    // Create user
+    // ========================
+    @Test
+    void shouldCreateUser()throws Exception{
+        UserResponseDTO response = createUserResponse("test", false, 1L);
+
+        when(userService.createUser(any())).thenReturn(response);
+
+        UserRequestDTO request = new UserRequestDTO();
+        request.setUsername("test");
+
+        ObjectMapper mapper = new ObjectMapper();
+        String json = mapper.writeValueAsString(request);
+
+        mockMvc.perform(post("/api/chat/user")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.Username").value("test"))
+                .andExpect(jsonPath("$.online").value("false"));
+
+        verify(userService).createUser(any());
+    }
+
+    // ========================
+    // Login user
+    // ========================
+    @Test
+    void shouldReturnUserInOnlineStatus() throws Exception {
+        UserResponseDTO response = createUserResponse("test", true, 1L);
+
+        when(userService.userLogin(any())).thenReturn(response);
+
+        UserRequestDTO request = new UserRequestDTO();
+        request.setUsername("test");
+
+        ObjectMapper mapper = new ObjectMapper();
+        String json = mapper.writeValueAsString(request);
+
+        mockMvc.perform(put("/api/chat/users/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.Username").value("test"))
+                .andExpect(jsonPath("$.online").value("true"));
+
+        verify(userService).userLogin(any());
+    }
+
+    // ========================
+    // Logout user
+    // ========================
+    @Test
+    void shouldReturnUserInOfflineStatus() throws Exception {
+        UserResponseDTO response = createUserResponse("test", false, 1L);
+
+        when(userService.userLogout(any())).thenReturn(response);
+
+        UserRequestDTO request = new UserRequestDTO();
+        request.setUsername("test");
+
+        ObjectMapper mapper = new ObjectMapper();
+        String json = mapper.writeValueAsString(request);
+
+        mockMvc.perform(put("/api/chat/users/logout")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.Username").value("test"))
+                .andExpect(jsonPath("$.online").value("false"));
+
+        verify(userService).userLogout(any());
+    }
+
+    // ========================
+    // Status user
+    // ========================
+    @Test
+    void shouldReturnUserStatus() throws Exception {
+        UserResponseDTO response = createUserResponse("test", false, 1L);
+
+        when(userService.getUserStatus(any())).thenReturn(response);
+
+        mockMvc.perform(get("/api/chat/users/test/status"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.Username").value("test"))
+                .andExpect(jsonPath("$.online").value("false"));
+
+        verify(userService).getUserStatus(any());
+    }
     // ========================
     // Helper methods
     // ========================
+    private UserResponseDTO createUserResponse(String username, boolean isOnline, long lastSeen){
+        UserResponseDTO u = new UserResponseDTO();
+        u.setOnline(isOnline);
+        u.setUsername(username);
+        u.setLastSeen(lastSeen);
+        return u;
+    }
+
     private MessageResponseDTO createResponse(String senderUsername, String receiverUsername, String text){
         MessageResponseDTO r = new MessageResponseDTO();
         r.setSender(senderUsername);

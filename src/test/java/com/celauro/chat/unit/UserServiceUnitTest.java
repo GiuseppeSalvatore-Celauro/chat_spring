@@ -14,8 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -74,4 +73,137 @@ public class UserServiceUnitTest {
 
         verify(repository).save(any(User.class));
     }
+
+    // ========================
+    // Login user
+    // ========================
+    @Test
+    void shouldChangeUserStatusInOnline(){
+        UserRequestDTO request = new UserRequestDTO();
+        request.setUsername("test");
+
+        User user = new User();
+        user.setOnline(false);
+        user.setLastSeen(0L);
+        user.setUsername("test");
+
+        when(repository.findByUsername(eq("test"))).thenReturn(Optional.of(user));
+        when(repository.save(any())).thenReturn(user);
+
+        UserResponseDTO response = service.userLogin(request);
+
+        assertEquals("test", response.getUsername());
+        assertTrue(response.isOnline());
+        assertEquals(0L, response.getLastSeen());
+
+        verify(repository).save(any());
+    }
+
+    // ========================
+    // Login user - edge case
+    // ========================
+    @Test
+    void shouldThrowException_whenUserDoesNotExist(){
+        UserRequestDTO request = new UserRequestDTO();
+        request.setUsername("test");
+
+        when(repository.findByUsername(eq("test"))).thenThrow(new NotFoundException("not found"));
+
+        assertThrows(NotFoundException.class, ()-> service.userLogin(request));
+
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void shouldThrowException_whenUserAlreadyOnline(){
+        UserRequestDTO request = new UserRequestDTO();
+        request.setUsername("test");
+
+        User user = new User();
+        user.setOnline(true);
+        user.setLastSeen(0L);
+        user.setUsername("test");
+
+        when(repository.findByUsername(eq("test"))).thenReturn(Optional.of(user));
+
+        assertThrows(RuntimeException.class, () -> service.userLogin(request));
+
+        verify(repository, never()).save(any());
+    }
+
+    // ========================
+    // Logout user
+    // ========================
+    @Test
+    void shouldChangeUserStatusInOffline(){
+        UserRequestDTO request = new UserRequestDTO();
+        request.setUsername("test");
+
+        User user = new User();
+        user.setOnline(true);
+        user.setLastSeen(0L);
+        user.setUsername("test");
+
+        when(repository.findByUsername(eq("test"))).thenReturn(Optional.of(user));
+        when(repository.save(any())).thenReturn(user);
+
+        UserResponseDTO response = service.userLogout(request);
+
+        assertEquals("test", response.getUsername());
+        assertTrue(!response.isOnline());
+        assertTrue(response.getLastSeen() > 0);
+
+        verify(repository).save(any());
+    }
+
+    // ========================
+    // Logout user - edge case
+    // ========================
+    @Test
+    void shouldThrowException_whenUserAlreadyOffline(){
+        UserRequestDTO request = new UserRequestDTO();
+        request.setUsername("test");
+
+        User user = new User();
+        user.setOnline(false);
+        user.setLastSeen(0L);
+        user.setUsername("test");
+
+        when(repository.findByUsername(eq("test"))).thenReturn(Optional.of(user));
+
+        assertThrows(RuntimeException.class, () -> service.userLogout(request));
+
+        verify(repository, never()).save(any());
+    }
+
+    // ========================
+    // User status
+    // ========================
+    @Test
+    void shouldReturnTheUserStatus(){
+        User u = new User();
+        u.setUsername("test");
+        u.setOnline(true);
+        u.setLastSeen(1L);
+
+        when(repository.findByUsername(eq("test"))).thenReturn(Optional.of(u));
+
+        UserResponseDTO res = service.getUserStatus("test");
+
+        assertNotNull(res);
+        assertEquals("test", res.getUsername());
+        assertTrue(res.isOnline());
+        assertTrue(res.getLastSeen() > 0L);
+
+        verify(repository).findByUsername(any());
+    }
+
+    // ========================
+    // User status - edge case
+    // ========================
+    @Test
+    void shouldThrowException_whenUserDoesNotExistInStatus(){
+        assertThrows(NotFoundException.class, () -> service.getUserStatus("test"));
+    }
+
 }
