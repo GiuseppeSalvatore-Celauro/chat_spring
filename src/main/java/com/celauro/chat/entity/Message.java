@@ -22,17 +22,19 @@ public class Message {
     private User sender;
     @ManyToOne
     private User receiver;
-
+    
     private long timestamp;
+    private boolean isRead;
 
     
 
     public Message() {}
 
-    public Message(User sender, User receiver, String text) {
+    public Message(User sender, User receiver, String text, boolean isRead) {
         this.sender = sender;
         this.receiver = receiver;
         this.text = text;
+        this.isRead = isRead;
         this.timestamp = System.currentTimeMillis();
     }    
 }

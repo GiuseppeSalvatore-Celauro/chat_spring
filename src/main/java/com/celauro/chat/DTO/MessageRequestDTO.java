@@ -19,4 +19,5 @@ public class MessageRequestDTO {
     @NotBlank(message = "testo obbligatorio")
     @Size(max = 200, message = "il testo del messaggio è troppo lungo")
     private String text;
+
 }

@@ -5,13 +5,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.celauro.chat.DTO.ConversationResponseDTO;
-import com.celauro.chat.DTO.MessageCountResponseDTO;
+import com.celauro.chat.DTO.*;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import com.celauro.chat.DTO.MessageRequestDTO;
-import com.celauro.chat.DTO.MessageResponseDTO;
 import com.celauro.chat.entity.Message;
 import com.celauro.chat.entity.User;
 import com.celauro.chat.exception.NotFoundException;
@@ -152,19 +149,55 @@ public class MessageService {
             }
         }
 
-        return convertMapToDto(conversationMap);
+        return convertMessagesMapToDto(conversationMap);
+    }
+
+    public void readMessages(ReadRequestDTO request){
+        User user = userService.getOrThrowExceptionUserByUsername(request.getUsername(), "User non esiste");
+        userService.getOrThrowExceptionUserByUsername(request.getWithUser(), "User non esiste");
+
+        if(!user.isOnline()) throw new RuntimeException("l'utente deve essere connesso per ricevere questa lista");
+
+        messageRepository.readMessage(request.getUsername(), request.getWithUser());
+    }
+
+    public List<MessageCountResponseDTO> getUnreadMessages(String username){
+        User user = userService.getOrThrowExceptionUserByUsername(username, "User non esiste");
+
+        if(!user.isOnline()) throw new RuntimeException("l'utente deve essere connesso per ricevere questa lista");
+
+        List<Message> unreadMessages = messageRepository.findByReceiverUsernameAndIsReadFalse(user.getUsername());
+
+        Map<String, Integer> map = new HashMap<>();
+
+        for(Message m: unreadMessages){
+            map.put(m.getSender().getUsername(), map.getOrDefault(m.getSender().getUsername(), 0) + 1);
+        }
+
+        return convertMaptoDto(map);
     }
 
     //=============
     //Helper methods
     //=============
-    private List<ConversationResponseDTO> convertMapToDto(Map<String, Message> lastMessages){
+    private List<MessageCountResponseDTO> convertMaptoDto(Map<String, Integer> mapCounter){
+        List<MessageCountResponseDTO> list = new ArrayList<>();
+        for (String key: mapCounter.keySet()){
+            MessageCountResponseDTO counter = new MessageCountResponseDTO(key, mapCounter.get(key));
+            list.add(counter);
+        }
+
+        return list;
+    }
+
+    private List<ConversationResponseDTO> convertMessagesMapToDto(Map<String, Message> lastMessages){
         List<ConversationResponseDTO> list = new ArrayList<>();
         for (String key: lastMessages.keySet()){
             ConversationResponseDTO c = new ConversationResponseDTO();
             c.setWithUser(key);
             c.setOnline(userService.getUserStatus(key).isOnline());
             c.setLastMessage(lastMessages.get(key).getText());
+            c.setRead(lastMessages.get(key).isRead());
             c.setTimestamp(lastMessages.get(key).getTimestamp());
             list.add(c);
         }
@@ -189,6 +222,7 @@ public class MessageService {
         singleResponse.setText(message.getText());
         singleResponse.setSender(message.getSender().getUsername());
         singleResponse.setReceiver(message.getReceiver().getUsername());
+        singleResponse.setRead(message.isRead());
         singleResponse.setTimestamp(message.getTimestamp());
         return singleResponse;
     }
@@ -198,6 +232,7 @@ public class MessageService {
         message.setText(request.getText());
         message.setSender(senderUser);
         message.setReceiver(reciverUser);
+        message.setRead(false);
         message.setTimestamp(System.currentTimeMillis());
         return message;
     }

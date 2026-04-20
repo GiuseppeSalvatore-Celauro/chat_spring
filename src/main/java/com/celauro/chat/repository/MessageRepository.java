@@ -3,8 +3,10 @@ package com.celauro.chat.repository;
 import java.util.List;
 import java.util.Optional;
 
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import com.celauro.chat.entity.Message;
@@ -19,6 +21,7 @@ public interface MessageRepository extends JpaRepository<Message, Long>{
     int countMessageBySenderUsername(String username);
     List<Message> findAllByOrderByTimestampDesc();
     List<Message> findBySenderOrderByTimestampDesc(User user);
+    List<Message> findByReceiverUsernameAndIsReadFalse(String username);
     Optional<Message> findById(long id);
 
     // ========================
@@ -50,6 +53,21 @@ public interface MessageRepository extends JpaRepository<Message, Long>{
     """)
     List<Message> findUserConversations(
             @Param("username") String username
+    );
+
+    @Transactional
+    @Modifying
+    @Query(value = """
+    UPDATE Message m
+    SET m.isRead = true
+    WHERE
+    m.receiver.username = :user
+    AND m.sender.username = :other
+    AND m.isRead = false
+    """)
+    void readMessage(
+            @Param("user") String user,
+            @Param("other") String other
     );
 
 }

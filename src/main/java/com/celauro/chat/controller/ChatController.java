@@ -73,7 +73,10 @@ public class ChatController {
         return userService.getUserStatus(username);
     }
 
-
+    @GetMapping("/messages/unread/{username}")
+    public List<MessageCountResponseDTO> showUnreadMessages(@PathVariable String username){
+        return messageService.getUnreadMessages(username);
+    }
     // ========================
     // POST Endpoints
     // ========================
@@ -85,6 +88,11 @@ public class ChatController {
     @PostMapping("/user")
     public UserResponseDTO createUser(@RequestBody @Valid UserRequestDTO request){
         return userService.createUser(request);
+    }
+
+    @PostMapping("/messages/read")
+    public void readMessages(@RequestBody @Valid ReadRequestDTO request){
+        messageService.readMessages(request);
     }
 
     // ========================
@@ -99,6 +107,7 @@ public class ChatController {
     public UserResponseDTO userLogout(@RequestBody @Valid UserRequestDTO request){
         return userService.userLogout(request);
     }
+
 
     // ========================
     // DELETE Endpoints

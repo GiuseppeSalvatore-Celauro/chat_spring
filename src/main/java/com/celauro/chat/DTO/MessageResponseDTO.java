@@ -11,4 +11,5 @@ public class MessageResponseDTO {
     private String receiver;
     private String text;   
     private long timestamp;
+    private boolean read;
 }
