@@ -2,6 +2,8 @@ package com.celauro.chat.handler;
 
 import java.util.List;
 
+import com.celauro.chat.exception.UserOfflineException;
+import com.celauro.chat.exception.UserOnlineException;
 import org.springframework.dao.DataIntegrityViolationException;
 import com.celauro.chat.exception.NotFoundException;
 import org.springframework.http.HttpStatus;
@@ -22,7 +24,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorMessageDTO MethodArgumentNotValidException(MethodArgumentNotValidException e, HttpServletRequest request){
+    public ErrorMessageDTO methodArgumentNotValidException(MethodArgumentNotValidException e, HttpServletRequest request){
 
         List<ValidationErrorDTO> errors = e.getBindingResult()
                                 .getFieldErrors()
@@ -40,14 +42,28 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorMessageDTO DataIntegrityViolationException(DataIntegrityViolationException e, HttpServletRequest request){
+    public ErrorMessageDTO dataIntegrityViolationException(DataIntegrityViolationException e, HttpServletRequest request){
         Logger.error("Campo univoco nel db", e);
         return errorFormatter(e, request);
     }
 
     @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ErrorMessageDTO NotFoundException(NotFoundException e, HttpServletRequest request){
+    public ErrorMessageDTO notFoundException(NotFoundException e, HttpServletRequest request){
+        Logger.error(e.getMessage(), e);
+        return errorFormatter(e, request);
+    }
+
+    @ExceptionHandler(UserOnlineException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorMessageDTO userOnlineException(UserOfflineException e, HttpServletRequest request){
+        Logger.error(e.getMessage(), e);
+        return errorFormatter(e, request);
+    }
+
+    @ExceptionHandler(UserOfflineException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ErrorMessageDTO userOfflineException(UserOfflineException e, HttpServletRequest request){
         Logger.error(e.getMessage(), e);
         return errorFormatter(e, request);
     }

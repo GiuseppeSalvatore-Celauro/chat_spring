@@ -2,6 +2,8 @@ package com.celauro.chat.service;
 
 import com.celauro.chat.DTO.UserRequestDTO;
 import com.celauro.chat.DTO.UserResponseDTO;
+import com.celauro.chat.exception.UserOfflineException;
+import com.celauro.chat.exception.UserOnlineException;
 import com.celauro.chat.utils.Logger;
 import org.springframework.stereotype.Service;
 
@@ -40,7 +42,7 @@ public class UserService {
     public UserResponseDTO userLogin(UserRequestDTO request){
         User user = this.getOrThrowExceptionUserByUsername(request.getUsername(), "Username non esistente, perfavore registrati");
 
-        if(user.isOnline()) throw new RuntimeException("Questo utente è gia loggato");
+        if(user.isOnline()) throw new UserOnlineException("Questo utente è gia loggato");
 
         user.setOnline(true);
         user.setLastSeen(0L);
@@ -54,7 +56,7 @@ public class UserService {
     public UserResponseDTO userLogout(UserRequestDTO request){
         User user = this.getOrThrowExceptionUserByUsername(request.getUsername(), "Username non esistente, perfavore registrati");
 
-        if(!user.isOnline()) throw new RuntimeException("Questo utente non è loggato");
+        if(!user.isOnline()) throw new UserOfflineException("Questo utente non è loggato");
 
         user.setOnline(false);
         user.setLastSeen(System.currentTimeMillis());
@@ -67,6 +69,8 @@ public class UserService {
 
     public UserResponseDTO getUserStatus(String username){
         User user = this.getOrThrowExceptionUserByUsername(username, "Utente non esiste");
+
+        if(!user.isOnline()) throw new UserOfflineException("Questo utente non è loggato");
 
         Logger.info("Richiesto status dell'utente: " + username);
         return toDto(user);

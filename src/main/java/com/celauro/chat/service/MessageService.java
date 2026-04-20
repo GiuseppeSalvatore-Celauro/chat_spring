@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.celauro.chat.DTO.*;
+import com.celauro.chat.exception.UserOfflineException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -34,7 +35,7 @@ public class MessageService {
         User senderUser = userService.getOrThrowExceptionUserByUsername(request.getSender(), "User mandante non trovato");
         User reciverUser = userService.getOrThrowExceptionUserByUsername(request.getReceiver(), "User ricevente non trovato");
 
-        if (!senderUser.isOnline()) throw new RuntimeException("Prima di poter inviare un messaggio devi essere connesso");
+        if (!senderUser.isOnline()) throw new UserOfflineException("Prima di poter inviare un messaggio devi essere connesso");
 
         Message message = createNewMessage(request, senderUser, reciverUser);
 
@@ -134,7 +135,7 @@ public class MessageService {
     public List<ConversationResponseDTO> getUserConversations(String username) {
         User user = userService.getOrThrowExceptionUserByUsername(username, "User non esiste");
 
-        if (!user.isOnline()) throw new RuntimeException("Prima di poter inviare un messaggio devi essere connesso");
+        if (!user.isOnline()) throw new UserOfflineException("Prima di poter inviare un messaggio devi essere connesso");
 
         List<Message> conversations = messageRepository.findUserConversations(username);
 
@@ -156,7 +157,7 @@ public class MessageService {
         User user = userService.getOrThrowExceptionUserByUsername(request.getUsername(), "User non esiste");
         userService.getOrThrowExceptionUserByUsername(request.getWithUser(), "User non esiste");
 
-        if(!user.isOnline()) throw new RuntimeException("l'utente deve essere connesso per ricevere questa lista");
+        if(!user.isOnline()) throw new UserOfflineException("l'utente deve essere connesso per ricevere questa lista");
 
         messageRepository.readMessage(request.getUsername(), request.getWithUser());
     }
@@ -164,7 +165,7 @@ public class MessageService {
     public List<MessageCountResponseDTO> getUnreadMessages(String username){
         User user = userService.getOrThrowExceptionUserByUsername(username, "User non esiste");
 
-        if(!user.isOnline()) throw new RuntimeException("l'utente deve essere connesso per ricevere questa lista");
+        if(!user.isOnline()) throw new UserOfflineException("l'utente deve essere connesso per ricevere questa lista");
 
         List<Message> unreadMessages = messageRepository.findByReceiverUsernameAndIsReadFalse(user.getUsername());
 
