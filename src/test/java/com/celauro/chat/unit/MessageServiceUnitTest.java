@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.celauro.chat.DTO.*;
+import com.celauro.chat.exception.UserOfflineException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -421,12 +422,12 @@ public class MessageServiceUnitTest {
         u1.setUsername("salvatore");
         u1.setOnline(true);
         u1.setLastSeen(0L);
+
         User u2 = new User();
         u2.setUsername("pippo");
-        u2.setOnline(false);
+
         User u3 = new User();
         u3.setUsername("marco");
-        u3.setOnline(false);
 
         Message m1 = new Message(u1, u3, "primo messaggio", false);
         Message m2 = new Message(u1, u2, "secondo messaggio", false);
@@ -464,5 +465,107 @@ public class MessageServiceUnitTest {
         assertEquals(0, r.size());
 
         verify(messageRepository).findUserConversations(eq("salvatore"));
+    }
+
+    // ========================
+    // Read message
+    // ========================
+    @Test
+    void shouldReadMessages(){
+        User u1 = new User();
+        u1.setUsername("salvatore");
+        u1.setOnline(true);
+        u1.setLastSeen(0L);
+
+        User u2 = new User();
+        u2.setUsername("pippo");
+
+        User u3 = new User();
+        u3.setUsername("marco");
+
+        Message m1 = new Message(u1, u2, "primo messaggio", false);
+        Message m2 = new Message(u2, u1, "secondo messaggio", false);
+        Message m3 = new Message(u2, u3, "secondo messaggio", false);
+
+        when(userService.getOrThrowExceptionUserByUsername(eq("salvatore"), any())).thenReturn(u1);
+
+        messageService.readMessages(new ReadRequestDTO("salvatore", "pippo"));
+
+        verify(messageRepository).readMessage(eq("salvatore"), eq("pippo"));
+    }
+
+    // ========================
+    // Read message - edge case
+    // ========================
+    @Test
+    void shouldThrowException_whenUserOffline(){
+        User u1 = new User();
+        u1.setUsername("salvatore");
+
+        User u2 = new User();
+        u2.setUsername("pippo");
+
+        when(userService.getOrThrowExceptionUserByUsername(eq("salvatore"), any())).thenReturn(u1);
+
+        assertThrows(UserOfflineException.class, ()->messageService.readMessages(new ReadRequestDTO("salvatore", "pippo")));
+    }
+
+    @Test
+    void shouldThrowException_whenUserDoesNotExist_inReadMessage(){
+        when(userService.getOrThrowExceptionUserByUsername(eq("salvatore"), any())).thenThrow(new NotFoundException("not found"));
+        assertThrows(NotFoundException.class, () -> messageService.readMessages(new ReadRequestDTO("salvatore", "pippo")));
+    }
+
+    // ========================
+    // Unread messages
+    // ========================
+    @Test
+    void shouldReturnListOfUnreadMessage(){
+        User u = new User();
+        u.setUsername("salvatore");
+        u.setOnline(true);
+        User u1 = new User();
+        u1.setUsername("pippo");
+
+        Message m = new Message();
+        m.setRead(false);
+        m.setSender(u1);
+        m.setReceiver(u);
+        Message m1 = new Message();
+        m1.setRead(false);
+        m1.setSender(u1);
+        m1.setReceiver(u);
+
+        when(userService.getOrThrowExceptionUserByUsername(eq("salvatore"), any())).thenReturn(u);
+        when(messageRepository.findByReceiverUsernameAndIsReadFalse(eq("salvatore"))).thenReturn(List.of(m, m1));
+
+        List<MessageCountResponseDTO> unreadMessages = messageService.getUnreadMessages("salvatore");
+
+        assertEquals(1, unreadMessages.size());
+        assertEquals("pippo", unreadMessages.getFirst().getUsername());
+        assertEquals(2, unreadMessages.getFirst().getCount());
+
+        verify(messageRepository).findByReceiverUsernameAndIsReadFalse(eq("salvatore"));
+    }
+
+    // ========================
+    // Unread messages - edge case
+    // ========================
+    @Test
+    void shouldThrowException_whenUserDoesNotExist_inUnreadMessage(){
+        when(userService.getOrThrowExceptionUserByUsername(eq("salvatore"), any())).thenThrow(new NotFoundException("not found"));
+
+        assertThrows(NotFoundException.class, ()-> messageService.getUnreadMessages("salvatore"));
+    }
+
+    @Test
+    void shouldThrowException_whenUserIsNotLoggedIn_inUnreadMessage(){
+        User u = new User();
+        u.setUsername("salvatore");
+        u.setOnline(false);
+
+        when(userService.getOrThrowExceptionUserByUsername(eq("salvatore"), any())).thenReturn(u);
+
+        assertThrows(UserOfflineException.class, ()-> messageService.getUnreadMessages("salvatore"));
     }
 }
