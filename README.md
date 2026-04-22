@@ -61,7 +61,7 @@ Il progetto simula le funzionalità base di un'app di chat (tipo WhatsApp/Telegr
     - SpringBootTest
     - DB reale (H2 / configurabile)
     - Test flussi completi
-  -  Controller Test:
+  - Controller Test:
     - MockMvc
     - Validazione endpoint REST
     - Test HTTP status e JSON response
