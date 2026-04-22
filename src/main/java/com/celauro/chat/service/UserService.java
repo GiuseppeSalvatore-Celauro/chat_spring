@@ -69,12 +69,10 @@ public class UserService {
 
     public UserResponseDTO getUserStatus(String username){
         User user = this.getOrThrowExceptionUserByUsername(username, "Utente non esiste");
-
-        if(!user.isOnline()) throw new UserOfflineException("Questo utente non è loggato");
-
         Logger.info("Richiesto status dell'utente: " + username);
         return toDto(user);
     }
+
 
     //=============
     //Helper methods

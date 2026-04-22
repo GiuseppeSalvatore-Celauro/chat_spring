@@ -38,6 +38,8 @@ public class MessageServiceIntegrationTest {
         userService.createUser(createUserRequest("prova"));
         userService.createUser(createUserRequest("provaReceiver"));
 
+        userService.userLogin(loginUserRequest("prova"));
+
         MessageResponseDTO response = messageService.createMessage(createMessageRequest("prova", "provaReceiver","Testo di prova"));
 
         assertNotNull(response);
@@ -59,6 +61,10 @@ public class MessageServiceIntegrationTest {
         userService.createUser(createUserRequest("prova1"));
         userService.createUser(createUserRequest("prova2"));
 
+        userService.userLogin(loginUserRequest("prova"));
+        userService.userLogin(loginUserRequest("prova1"));
+        userService.userLogin(loginUserRequest("prova2"));
+
         messageService.createMessage(createMessageRequest("prova", "prova1", "Primo"));
         messageService.createMessage(createMessageRequest("prova1", "prova1", "Secondo"));
         messageService.createMessage(createMessageRequest("prova2", "prova1", "Terzo"));
@@ -78,6 +84,10 @@ public class MessageServiceIntegrationTest {
         userService.createUser(createUserRequest("prova"));
         userService.createUser(createUserRequest("prova1"));
         userService.createUser(createUserRequest("prova2"));
+
+        userService.userLogin(loginUserRequest("prova"));
+        userService.userLogin(loginUserRequest("prova1"));
+        userService.userLogin(loginUserRequest("prova2"));
 
         messageService.createMessage(createMessageRequest("prova", "prova1", "Primo"));
         MessageResponseDTO response = messageService.createMessage(createMessageRequest("prova1", "prova", "Secondo"));
@@ -102,6 +112,8 @@ public class MessageServiceIntegrationTest {
         userService.createUser(createUserRequest("salvatore"));
         userService.createUser(createUserRequest("prova"));
 
+        userService.userLogin(loginUserRequest("salvatore"));
+
         messageService.createMessage(createMessageRequest("salvatore", "prova", "primo"));
         messageService.createMessage(createMessageRequest("salvatore", "prova", "secondo"));
         messageService.createMessage(createMessageRequest("salvatore", "prova", "terzo"));
@@ -117,10 +129,10 @@ public class MessageServiceIntegrationTest {
     // Search message from username - edge case
     // ========================
     @Test
-    void shouldThrowException_whenUserHasNoMessages_InIntegration(){
+    void shouldReturnEmptyList_whenUserHasNoMessages_InIntegration(){
         userService.createUser(createUserRequest("salvatore"));
 
-        assertThrows(NotFoundException.class, () -> messageService.getFilteredList(20, "salvatore", null));
+        assertTrue(messageService.getUserMessages("salvatore").isEmpty());
 
     }
 
@@ -133,6 +145,9 @@ public class MessageServiceIntegrationTest {
         userService.createUser(createUserRequest("pippo"));
         userService.createUser(createUserRequest("mario"));
 
+        userService.userLogin(loginUserRequest("salvatore"));
+        userService.userLogin(loginUserRequest("pippo"));
+        userService.userLogin(loginUserRequest("mario"));
 
         messageService.createMessage(createMessageRequest("salvatore", "mario","primo"));
         messageService.createMessage(createMessageRequest("pippo", "mario","secondo"));
@@ -154,6 +169,8 @@ public class MessageServiceIntegrationTest {
         userService.createUser(createUserRequest("prova"));
         userService.createUser(createUserRequest("provaReceiver"));
 
+        userService.userLogin(loginUserRequest("prova"));
+
         messageService.createMessage(createMessageRequest("prova", "provaReceiver","Secondo testo"));
 
         List<MessageResponseDTO> messages = messageService.getFilteredList(20, null, "secondo");
@@ -167,6 +184,9 @@ public class MessageServiceIntegrationTest {
     void shouldReturnUserMessagesThatContainText(){
         userService.createUser(createUserRequest("salvatore"));
         userService.createUser(createUserRequest("pippo"));
+
+        userService.userLogin(loginUserRequest("salvatore"));
+        userService.userLogin(loginUserRequest("pippo"));
 
         messageService.createMessage(createMessageRequest("salvatore", "pippo", "primo"));
         messageService.createMessage(createMessageRequest("pippo", "salvatore","secondo"));
@@ -188,6 +208,8 @@ public class MessageServiceIntegrationTest {
         userService.createUser(createUserRequest("salvatore"));
         userService.createUser(createUserRequest("pippo"));
 
+        userService.userLogin(loginUserRequest("salvatore"));
+
         for(int i = 0; i <= 30; i++){
             messageService.createMessage(createMessageRequest("salvatore", "pippo", "msg n:" + i));
         }
@@ -208,6 +230,8 @@ public class MessageServiceIntegrationTest {
     void shouldReturnNumberOfMessages(){
         userService.createUser(createUserRequest("salvatore"));
         userService.createUser(createUserRequest("receiver"));
+
+        userService.userLogin(loginUserRequest("salvatore"));
 
         for(int i = 0; i < 5; i++){
             messageService.createMessage(createMessageRequest("salvatore", "receiver", "msg n:" + i));
@@ -242,6 +266,9 @@ public class MessageServiceIntegrationTest {
     void shouldReturnConversationBetweenUsers(){
         userService.createUser(createUserRequest("salvatore"));
         userService.createUser(createUserRequest("pippo"));
+
+        userService.userLogin(loginUserRequest("salvatore"));
+        userService.userLogin(loginUserRequest("pippo"));
 
         messageService.createMessage(createMessageRequest("salvatore", "pippo", "primo messaggio"));
         messageService.createMessage(createMessageRequest("pippo", "salvatore", "secondo messaggio"));
@@ -278,6 +305,10 @@ public class MessageServiceIntegrationTest {
         userService.createUser(createUserRequest("pippo"));
         userService.createUser(createUserRequest("marco"));
 
+        userService.userLogin(loginUserRequest("salvatore"));
+        userService.userLogin(loginUserRequest("pippo"));
+        userService.userLogin(loginUserRequest("marco"));
+
         messageService.createMessage(createMessageRequest("salvatore", "marco", "primo messaggio"));
         messageService.createMessage(createMessageRequest("pippo", "salvatore", "secondo messaggio"));
         messageService.createMessage(createMessageRequest("marco", "salvatore", "terzo messaggio"));
@@ -298,6 +329,9 @@ public class MessageServiceIntegrationTest {
     void shouldReturnEmptyList_whenUserDoesNotHaveConversation(){
         userService.createUser(createUserRequest("salvatore"));
         userService.createUser(createUserRequest("pippo"));
+
+        userService.userLogin(loginUserRequest("salvatore"));
+        userService.userLogin(loginUserRequest("pippo"));
 
         List<ConversationResponseDTO> r = messageService.getUserConversations("salvatore");
 
@@ -322,7 +356,11 @@ public class MessageServiceIntegrationTest {
         return r;
     }
 
-
+    private UserRequestDTO loginUserRequest(String username){
+        UserRequestDTO r = new UserRequestDTO();
+        r.setUsername(username);
+        return r;
+    }
 
 
 }

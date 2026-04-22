@@ -103,10 +103,6 @@ public class MessageService {
             messageList = messageRepository.findMessageBySenderUsernameOrderByTimestampDesc(username, pageable);
         }
 
-        if(messageList.isEmpty()){
-            throw new NotFoundException("Non ci sono elementi");
-        }
-
         Logger.info("Spedita lista messaggi filtrati");
         return toListOfDto(messageList);
     }
@@ -170,7 +166,6 @@ public class MessageService {
         List<Message> unreadMessages = messageRepository.findByReceiverUsernameAndIsReadFalse(user.getUsername());
 
         Map<String, Integer> map = new HashMap<>();
-
         for(Message m: unreadMessages){
             map.put(m.getSender().getUsername(), map.getOrDefault(m.getSender().getUsername(), 0) + 1);
         }

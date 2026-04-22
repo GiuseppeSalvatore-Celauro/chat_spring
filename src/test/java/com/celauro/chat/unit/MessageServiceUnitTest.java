@@ -12,8 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.celauro.chat.DTO.ConversationResponseDTO;
-import com.celauro.chat.DTO.MessageCountResponseDTO;
+import com.celauro.chat.DTO.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,8 +20,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 
-import com.celauro.chat.DTO.MessageRequestDTO;
-import com.celauro.chat.DTO.MessageResponseDTO;
 import com.celauro.chat.entity.Message;
 import com.celauro.chat.entity.User;
 import com.celauro.chat.exception.NotFoundException;
@@ -55,6 +52,7 @@ public class MessageServiceUnitTest {
 
         User sender = new User();
         sender.setUsername(request.getSender());
+        sender.setOnline(true);
 
         User receiver = new User();
         receiver.setUsername(request.getReceiver());
@@ -87,6 +85,7 @@ public class MessageServiceUnitTest {
 
         User sender = new User();
         sender.setUsername(request.getSender());
+        sender.setOnline(true);
 
         User receiver = new User();
         receiver.setUsername(request.getReceiver());
@@ -160,7 +159,7 @@ public class MessageServiceUnitTest {
 
         List<Message> messages = new ArrayList<>();
         for(int i=0; i < 100; i++){
-            Message message = new Message(sender, receiver,"messaggio numero: " + i);
+            Message message = new Message(sender, receiver, "messaggio numero: " + i, false);
             messages.add(message);
         }
 
@@ -280,7 +279,7 @@ public class MessageServiceUnitTest {
 
         List<Message> messages = new ArrayList<>();
         for(int i=0; i < 100; i++){
-            Message message = new Message(sender, receiver,"messaggio numero: " + i);
+            Message message = new Message(sender, receiver,"messaggio numero: " + i, false);
             messages.add(message);
         }
 
@@ -347,9 +346,9 @@ public class MessageServiceUnitTest {
         User u2 = new User();
         u2.setUsername("pippo");
 
-        Message m1 = new Message(u1, u2, "primo messaggio");
-        Message m2 = new Message(u2, u1, "secondo messaggio");
-        Message m3 = new Message(u1, u2, "terzo messaggio");
+        Message m1 = new Message(u1, u2, "primo messaggio", false);
+        Message m2 = new Message(u2, u1, "secondo messaggio", false);
+        Message m3 = new Message(u1, u2, "terzo messaggio", false);
 
         when(userService.getOrThrowExceptionUserByUsername(eq("salvatore"), any())).thenReturn(u1);
         when(userService.getOrThrowExceptionUserByUsername(eq("pippo"), any())).thenReturn(u2);
@@ -420,24 +419,29 @@ public class MessageServiceUnitTest {
     void shouldReturnListOfUserConversations(){
         User u1 = new User();
         u1.setUsername("salvatore");
+        u1.setOnline(true);
+        u1.setLastSeen(0L);
         User u2 = new User();
         u2.setUsername("pippo");
+        u2.setOnline(false);
         User u3 = new User();
         u3.setUsername("marco");
+        u3.setOnline(false);
 
-        Message m1 = new Message(u1, u3, "primo messaggio");
-        Message m2 = new Message(u1, u2, "secondo messaggio");
+        Message m1 = new Message(u1, u3, "primo messaggio", false);
+        Message m2 = new Message(u1, u2, "secondo messaggio", false);
 
         when(userService.getOrThrowExceptionUserByUsername(eq("salvatore"), any())).thenReturn(u1);
+        when(userService.getUserStatus(any())).thenReturn(new UserResponseDTO(u1.getUsername(), u1.isOnline(), u1.getLastSeen()));
         when(messageRepository.findUserConversations(eq("salvatore"))).thenReturn(List.of(m2,m1));
 
-        List<ConversationResponseDTO> r = messageService.getUserConversations("salvatore");
+        List<ConversationResponseDTO> res = messageService.getUserConversations("salvatore");
 
-        assertEquals(2, r.size());
-        assertEquals("marco", r.getFirst().getWithUser());
-        assertEquals("pippo", r.getLast().getWithUser());
-        assertEquals("primo messaggio", r.getFirst().getLastMessage());
-        assertEquals("secondo messaggio", r.getLast().getLastMessage());
+        assertEquals(2, res.size());
+        assertEquals("marco", res.getFirst().getWithUser());
+        assertEquals("pippo", res.getLast().getWithUser());
+        assertEquals("primo messaggio", res.getFirst().getLastMessage());
+        assertEquals("secondo messaggio", res.getLast().getLastMessage());
 
         verify(userService).getOrThrowExceptionUserByUsername(eq("salvatore"), any());
         verify(messageRepository).findUserConversations(eq("salvatore"));
@@ -448,6 +452,11 @@ public class MessageServiceUnitTest {
     // ========================
     @Test
     void shouldReturnEmptyList_whenUserDoesNotHaveConversation(){
+        User onlineUser = new User();
+        onlineUser.setOnline(true);
+        onlineUser.setUsername("salvatore");
+
+        when(userService.getOrThrowExceptionUserByUsername(eq("salvatore"), any())).thenReturn(onlineUser);
         when(messageRepository.findUserConversations(eq("salvatore"))).thenReturn(List.of());
 
         List<ConversationResponseDTO> r = messageService.getUserConversations("salvatore");
