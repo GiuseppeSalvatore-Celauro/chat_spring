@@ -3,6 +3,7 @@ package com.celauro.chat.integration;
 import com.celauro.chat.DTO.*;
 import com.celauro.chat.entity.Message;
 import com.celauro.chat.exception.NotFoundException;
+import com.celauro.chat.exception.UserOfflineException;
 import com.celauro.chat.repository.MessageRepository;
 import com.celauro.chat.service.MessageService;
 import com.celauro.chat.service.UserService;
@@ -338,7 +339,86 @@ public class MessageServiceIntegrationTest {
         assertEquals(0, r.size());
     }
 
+    // ========================
+    // Read message
+    // ========================
+    @Test
+    void shouldReadUserMessages(){
+        userService.createUser(createUserRequest("salvatore"));
+        userService.createUser(createUserRequest("pippo"));
 
+        userService.userLogin(loginUserRequest("salvatore"));
+        userService.userLogin(loginUserRequest("pippo"));
+
+        messageService.createMessage(createMessageRequest("pippo", "salvatore", "msg1"));
+        messageService.createMessage(createMessageRequest("pippo", "salvatore", "msg2"));
+
+        messageService.readMessages(new ReadRequestDTO("salvatore", "pippo"));
+
+        List<MessageCountResponseDTO> msgs = messageService.getUnreadMessages("salvatore");
+
+        assertTrue(msgs.isEmpty());
+
+    }
+
+    // ========================
+    // Read message - edge case
+    // ========================
+    @Test
+    void shouldThrowException_whenUserOffline(){
+        userService.createUser(createUserRequest("salvatore"));
+        userService.createUser(createUserRequest("pippo"));
+
+        userService.userLogin(loginUserRequest("pippo"));
+
+        messageService.createMessage(createMessageRequest("pippo", "salvatore", "msg1"));
+        messageService.createMessage(createMessageRequest("pippo", "salvatore", "msg2"));
+
+       assertThrows(UserOfflineException.class, () -> messageService.readMessages(new ReadRequestDTO("salvatore", "pippo")));
+    }
+
+    // ========================
+    // Unread messages
+    // ========================
+    @Test
+    void shouldReturnListOfUnreadMessages(){
+        userService.createUser(createUserRequest("salvatore"));
+        userService.createUser(createUserRequest("pippo"));
+
+        userService.userLogin(loginUserRequest("salvatore"));
+        userService.userLogin(loginUserRequest("pippo"));
+
+        messageService.createMessage(createMessageRequest("pippo", "salvatore", "msg1"));
+        messageService.createMessage(createMessageRequest("pippo", "salvatore", "msg2"));
+
+
+        List<MessageCountResponseDTO> msgs = messageService.getUnreadMessages("salvatore");
+
+        assertEquals(1, msgs.size());
+        assertEquals("pippo", msgs.getFirst().getUsername());
+        assertEquals(2, msgs.getFirst().getCount());
+    }
+
+    // ========================
+    // Unread messages - edge case
+    // ========================
+    @Test
+    void shouldReturnEmptyList_whenThereAreNotUnreadMessages(){
+        userService.createUser(createUserRequest("salvatore"));
+        userService.createUser(createUserRequest("pippo"));
+
+        userService.userLogin(loginUserRequest("salvatore"));
+        userService.userLogin(loginUserRequest("pippo"));
+
+        messageService.createMessage(createMessageRequest("pippo", "salvatore", "msg1"));
+        messageService.createMessage(createMessageRequest("pippo", "salvatore", "msg2"));
+
+        messageService.readMessages(new ReadRequestDTO("salvatore", "pippo"));
+
+        List<MessageCountResponseDTO> msgs = messageService.getUnreadMessages("salvatore");
+
+        assertEquals(0, msgs.size());
+    }
 
     // ========================
     // Helper methods

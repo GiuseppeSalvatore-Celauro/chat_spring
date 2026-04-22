@@ -452,6 +452,43 @@ public class ChatControllerTest {
 
         verify(userService).getUserStatus(any());
     }
+
+    // ========================
+    // Read message
+    // ========================
+    @Test
+    void shouldReadMessage()throws Exception{
+        ReadRequestDTO request = new ReadRequestDTO();
+        request.setUsername("test");
+        request.setWithUser("testRicezione");
+
+        ObjectMapper mapper = new ObjectMapper();
+        String json = mapper.writeValueAsString(request);
+
+        mockMvc.perform(post("/api/chat/messages/read")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isOk());
+    }
+
+    // ========================
+    // Unread message
+    // ========================
+    @Test
+    void shouldReturnListOfUnreadMessages()throws Exception{
+        MessageCountResponseDTO count1 = new MessageCountResponseDTO("salvatore", 2);
+
+        when(messageService.getUnreadMessages(eq("salvatore"))).thenReturn(List.of(count1));
+
+        mockMvc.perform(get("/api/chat/messages/unread/salvatore"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].username").value("salvatore"))
+                .andExpect(jsonPath("$[0].count").value(2));
+
+
+    }
+
     // ========================
     // Helper methods
     // ========================
