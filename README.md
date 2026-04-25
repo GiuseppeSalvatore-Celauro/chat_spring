@@ -98,6 +98,11 @@ Il progetto simula le funzionalità base di un'app di chat (tipo WhatsApp/Telegr
 
 ---
 
+## Project Structure
+  - backend/ → Spring Boot API
+  - frontend/ → UI (in sviluppo)
+---
+
 ## Stato del progetto
 
 Work in progress — il progetto è in continua evoluzione.
