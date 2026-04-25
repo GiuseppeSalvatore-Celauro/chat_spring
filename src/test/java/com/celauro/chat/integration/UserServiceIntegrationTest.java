@@ -107,6 +107,32 @@ public class UserServiceIntegrationTest {
     }
 
     // ========================
+    // User list
+    // ========================
+    @Test
+    void shouldReturnUserList(){
+        userService.createUser(toDto("test"));
+        userService.createUser(toDto("test1"));
+        userService.createUser(toDto("test2"));
+
+        List<UserResponseDTO> dto = userService.getAllUsers();
+
+        assertEquals(3, dto.size());
+        assertEquals("test", dto.getFirst().getUsername());
+    }
+
+    // ========================
+    // User list - edge case
+    // ========================
+
+    @Test
+    void shouldReturnEmptyList_whenUserIsEmpty(){
+        List<UserResponseDTO> dto = userService.getAllUsers();
+
+        assertEquals(0, dto.size());
+    }
+
+    // ========================
     // Helper methods
     // ========================
     private UserRequestDTO toDto(String username){

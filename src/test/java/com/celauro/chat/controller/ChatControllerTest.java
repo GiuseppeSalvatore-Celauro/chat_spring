@@ -18,6 +18,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -487,6 +488,37 @@ public class ChatControllerTest {
                 .andExpect(jsonPath("$[0].count").value(2));
 
 
+    }
+
+    // ========================
+    // User list
+    // ========================
+    @Test
+    void shouldReturnUsersList()throws Exception{
+        List<UserResponseDTO> response = new ArrayList<>();
+        response.add(createUserResponse("salvatore", false, 1L));
+        response.add(createUserResponse("pippo", false, 1L));
+        response.add(createUserResponse("mario", false, 1L));
+
+        when(userService.getAllUsers()).thenReturn(response);
+
+        mockMvc.perform(get("/api/chat/users"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(3));
+    }
+
+    // ========================
+    // User list - edge case
+    // ========================
+    @Test
+    void shouldReturnEmptyList_whenUserIsEmpty()throws Exception{
+        List<UserResponseDTO> response = new ArrayList<>();
+
+        when(userService.getAllUsers()).thenReturn(response);
+
+        mockMvc.perform(get("/api/chat/users"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
     }
 
     // ========================

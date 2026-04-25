@@ -12,6 +12,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -196,6 +197,38 @@ public class UserServiceUnitTest {
         assertTrue(res.getLastSeen() > 0L);
 
         verify(repository).findByUsername(any());
+    }
+
+    // ========================
+    // Users list
+    // ========================
+    @Test
+    void shouldReturnListOfUsers(){
+        User u = new User("salvatore", false, 1L);
+        User u1 = new User("pippo", false, 1L);
+        User u2 = new User("marco", false, 1L);
+
+        when(repository.findAll()).thenReturn(List.of(u,u1,u2));
+
+        List<UserResponseDTO> response = service.getAllUsers();
+
+        assertEquals(3, response.size());
+
+        verify(repository).findAll();
+    }
+
+    // ========================
+    // Users list - edge case
+    // ========================
+    @Test
+    void shouldReturnAnEmptyList_whenUserIsEmpty(){
+        when(repository.findAll()).thenReturn(List.of());
+
+        List<UserResponseDTO> response = service.getAllUsers();
+
+        assertEquals(0, response.size());
+
+        verify(repository).findAll();
     }
 
     // ========================
