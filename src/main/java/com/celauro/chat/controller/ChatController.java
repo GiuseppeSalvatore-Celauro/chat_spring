@@ -85,10 +85,10 @@ public class ChatController {
     // ========================
     // POST Endpoints
     // ========================
-    @PostMapping("/message")
-    public MessageResponseDTO sendMessage(@RequestBody @Valid MessageRequestDTO request){
-            return messageService.createMessage(request);
-    }
+//    @PostMapping("/message")
+//    public MessageResponseDTO sendMessage(@RequestBody @Valid MessageRequestDTO request){
+//            return messageService.createMessage(request);
+//    }
 
     @PostMapping("/user")
     public UserResponseDTO createUser(@RequestBody @Valid UserRequestDTO request){
