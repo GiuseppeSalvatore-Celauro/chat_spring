@@ -13,6 +13,9 @@ import com.celauro.chat.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -73,10 +76,21 @@ public class UserService {
         return toDto(user);
     }
 
+    public List<UserResponseDTO> getAllUsers() {
+        return listOfDtos(repository.findAll());
+    }
 
     //=============
     //Helper methods
     //=============
+    private List<UserResponseDTO> listOfDtos(List<User> users){
+        List<UserResponseDTO> response = new ArrayList<>();
+        for(User user: users){
+            response.add(toDto(user));
+        }
+        return response;
+    }
+
     private UserResponseDTO toDto(User user){
         UserResponseDTO r = new UserResponseDTO();
         r.setUsername(user.getUsername());
@@ -84,4 +98,5 @@ public class UserService {
         r.setLastSeen(user.getLastSeen());
         return r;
     }
+
 }

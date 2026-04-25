@@ -77,6 +77,11 @@ public class ChatController {
     public List<MessageCountResponseDTO> showUnreadMessages(@PathVariable String username){
         return messageService.getUnreadMessages(username);
     }
+
+    @GetMapping("/users")
+    public List<UserResponseDTO> showAllUsers(){
+        return userService.getAllUsers();
+    }
     // ========================
     // POST Endpoints
     // ========================
