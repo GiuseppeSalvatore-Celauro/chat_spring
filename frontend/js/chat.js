@@ -17,6 +17,9 @@ document.addEventListener("DOMContentLoaded", (e) =>{
             fillMessageList(messages);            
         })
         .catch(err => console.error(err));
+
+    
+    websocketConnect();
 })
 
 
@@ -50,8 +53,6 @@ function setUpClassGetter(messages){
             localStorage.setItem("withUser", messages[i].withUser);
             
             apiGetFetch();
-
-            socketConnect();
         })
     })
 }
@@ -106,26 +107,61 @@ function buildComponentMessageBox(messages){
     `
 }
 
+const socket = new SockJS("http://localhost:8080/ws");
+const stompClient = Stomp.over(socket);
+stompClient.debug = null;
+let isConnected = false;
+
 function setUpIdGetter(){
     const messageSendInput = document.querySelector("#messagesInput")
     messageSendInput.addEventListener("keydown", (e) => {
         if(e.key == "Enter"){
             const newMessage = new MessageRequestDTO(localStorage.getItem("username"), localStorage.getItem("withUser"), messageSendInput.value)
 
-
-            api.setUrl("/message");
+            // REST Method
+            // api.setUrl("/message");
             
-            const response = api.fetchPost(newMessage);
-            console.log(response);   
+            // const response = api.fetchPost(newMessage);
+            // console.log(response); 
+
+            // WebSocket Method
+            if(isConnected){
+                stompClient.send("/app/chat.send", {}, JSON.stringify(newMessage))
+                addMessagesToChat(newMessage)
+            }
+
+            messageSendInput.value = "";
         }
     })
 }
 
-function socketConnect(){
-    const socket = new SockJS("http://localhost:8080/ws");
-    const stompClient = Stomp.over(socket);
-
+function websocketConnect(){
+    
     stompClient.connect({}, ()=>{
-        console.log("connected");
+        isConnected = true;
+
+        stompClient.subscribe("/topic/messages/" + localStorage.getItem("username"), (message) => {
+            const body = JSON.parse(message.body);
+
+            if(
+                body.sender === localStorage.getItem("withUser") ||
+                body.receiver === localStorage.getItem("withUser")
+            ){
+                addMessagesToChat(body);
+            }
+        });
     })
+
+}
+
+function addMessagesToChat(message){
+    messagesBox.innerHTML += `
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body rounded-4 bg-primary text-white align-items-end">
+                  <p class="card-text">${message.text}</p>
+                </div>
+            </div>
+        </div>
+        `
 }
